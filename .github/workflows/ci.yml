@@ -1,0 +1,71 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  checks:
+    name: Repository and application checks
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Check required course materials
+        shell: pwsh
+        run: |
+          $required = @(
+            '《软件系统设计与应用S》课程设计实施 - p.pdf',
+            '需求分析说明书.docx'
+          )
+          $missing = $required | Where-Object { -not (Test-Path -LiteralPath $_) }
+          if ($missing) {
+            Write-Error "Missing required course materials: $($missing -join ', ')"
+          }
+
+      - name: Set up Node.js
+        if: ${{ hashFiles('frontend/package-lock.json', 'backend/package-lock.json') != '' }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install and check frontend
+        if: ${{ hashFiles('frontend/package-lock.json') != '' }}
+        working-directory: frontend
+        run: |
+          npm ci
+          npm run lint --if-present
+          npm test --if-present
+          npm run build --if-present
+
+      - name: Install and check Node.js backend
+        if: ${{ hashFiles('backend/package-lock.json') != '' }}
+        working-directory: backend
+        run: |
+          npm ci
+          npm run lint --if-present
+          npm test --if-present
+          npm run build --if-present
+
+      - name: Set up Java
+        if: ${{ hashFiles('backend/pom.xml') != '' }}
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+
+      - name: Verify Maven backend
+        if: ${{ hashFiles('backend/pom.xml') != '' }}
+        run: mvn --batch-mode --file backend/pom.xml verify
+
+      - name: Report pending application checks
+        if: ${{ hashFiles('frontend/package-lock.json', 'backend/package-lock.json', 'backend/pom.xml') == '' }}
+        run: echo "No frontend or backend manifest is present yet; application checks will run when one is added."
