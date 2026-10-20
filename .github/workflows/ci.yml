@@ -23,7 +23,7 @@ jobs:
         run: |
           $required = @(
             '《软件系统设计与应用S》课程设计实施 - p.pdf',
-            '需求分析说明书.docx'
+            '需求分析说明书2.0.docx'
           )
           $missing = $required | Where-Object { -not (Test-Path -LiteralPath $_) }
           if ($missing) {
@@ -69,3 +69,4 @@ jobs:
       - name: Report pending application checks
         if: ${{ hashFiles('frontend/package-lock.json', 'backend/package-lock.json', 'backend/pom.xml') == '' }}
         run: echo "No frontend or backend manifest is present yet; application checks will run when one is added."
+
