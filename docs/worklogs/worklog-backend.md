@@ -105,3 +105,24 @@
   3. **提交信息计数**:任务书预设 "(+7 tests)",实际新增 10 条,按事实写为 "(+10 tests)",如需严格照抄预设文案可一笔 amend。
   4. **设计文档路径出入(未改文档)**:02 设计 §2/§4 注释路径为 `backend/src/services/ai/...`,实际实现位于 `backend/src/ai/...`(Phase 2 既有结构);请总控下轮同步文档。
   5. **测试运行口径**:AI 两套件与其他套件共用 `TCK-` 前缀清理,必须以 `npm test`(即 `jest --runInBand`)运行;并行 worker 下 beforeAll/afterAll 互删数据会大面积误报(实测确认,属既有 MARK 清理机制的固有约束,非本次引入)。
+
+## 任务 4:GUI 验收配套小修复(总控指令)
+
+- [2026-10-24] 任务书(执行人:ssda-backend-dev;依据 docs/test/gui-acceptance-report.md 的 D-MED-2 与「数据质量观察/建议」两条):
+  1. **F1[D-MED-2 后端侧] 真实日历日期校验**:前端日期控件会把 2026-13-99 静默解析为合法日期提交,后端 zod 的 YYYY-MM-DD 正则只验形状不验真实日历。修复:validators 日期字段(knowledge effectiveFrom/effectiveUntil、activity startTime/endTime、ai-log startDate/endDate 等)加 refine 真实日历校验(new Date UTC 解析后回验年月日一致),错误 message 中文「日期不合法:<值> 不是真实存在的日期」;确保 2026-02-30、2026-13-01 均被 400 拦截。新增测试 ≥3 条(2026-13-99 / 2026-02-30 / 合法日期 2026-02-28 通过)。
+  2. **F2[脏数据] 清理种子脏数据**:GUI 验收发现课程「危机」(代码 231321,semester 填 "a's'd")学生端可见。修复:①核对 db/seed.sql 并修正/删除脏行;②对运行库 ssda 执行针对性 UPDATE/DELETE(不重跑整个 seed);③验证不影响 ssda_test。若 seed 中还有其他明显脏数据(字段不符合契约格式)一并修正并列清单。
+- 边界:只写 backend/、db/、docs/worklogs/worklog-backend.md;不碰 frontend/;不 push;MySQL 仅用 ssda/ssda_test;3000 端口服务运行中(tsx watch 热载属预期)。
+- 验收:npm run lint / npm test(129+新增全过)/ npm run build 全绿;curl 实测 ssda 库该课程不可见、非法日期被 400 拦截;小步两笔提交 `fix(backend): ...` / `chore(db): ...`。
+
+### 任务 4 执行记录(2026-10-24)
+
+- **F1 真实日历日期校验(D-MED-2 后端侧)**:
+  - `src/validators/common.schema.ts` 新增:`isRealCalendarDate()`(Date.UTC 解析后回验年月日一致,覆盖月/日越界与平闰年)、`isRealCalendarDateTime()`(日期部分真实 + 小时<24/分秒<60)、`refineRealDate()` / `refineRealDateTime()`(zod v4 `.refine(fn, { error: (iss)=>... })` 动态消息,失败 message 为「日期不合法:<值> 不是真实存在的日期」/「时间不合法:<值> 不是合法的时间」),并收编 DATE_RE/DATETIME_RE 到公共模块。
+  - 接入日期字段:`knowledge.schema.ts` effectiveFrom/effectiveUntil、`activity.schema.ts` startTime/endTime、`ai-log.schema.ts` startDate/endDate;`service.schema.ts` 无日期字段(serviceTime 为自由文本),course/location/category/auth 亦无,均不需改。原「格式应为 YYYY-MM-DD」类消息与字段级 refine 先后顺序不变(格式错仍报格式,形状对但日历不存在报日历错)。
+  - 新增 `tests/date-validation.test.ts`(5 条):①effectiveFrom=2026-13-99 接口 400 且 message 含「2026-13-99」「不是真实存在的日期」;②effectiveUntil=2026-02-30 接口 400;③活动 startTime=2026-02-30 10:00:00 接口 400;④合法 2026-02-28 schema 放行 + 接口创建成功(创建数据 TCK- 前缀,afterAll cleanupByMark 清理);⑤schema 单测覆盖 2026-13-01/2026-02-30/平年 2025-02-29 拦截、闰年 2024-02-29 通过、ai-log 与 activity 同规则、25:00:00 小时越界拦截。
+- **F2 脏数据清理**:
+  - **事实修正:db/seed.sql 中并不存在该脏行**。全文件扫描(所有日期值真实性、semester 形状、引号乱码)均无脏数据——9 门课程 semester 全为 `2026-2027-1`。「危机」(id=12,code=231321,semester="a's'd")是历史手工测试写入运行库 ssda 的数据,GUI 报告亦称「疑似历史测试脏数据」。
+  - 运行库清理:先查 `course_teacher` 对 course_id=12 无引用(可安全删),再参数化执行 `DELETE FROM course WHERE id=12 AND name='危机' AND code='231321' AND semester="a's'd"`(affectedRows=1,四字段全匹配的定向删除);复查全库 semester 不合法/名称含「危机」残留为空,现存 9 门课程字段全部合法。
+  - ssda_test 无该脏数据(查询为空),全量 `npm test`(globalSetup 重建 ssda_test)通过即验证不受影响。
+- **验收**:`npm run lint` ✅、`npm test` **17 套件 134 用例**(129+5)全绿 ✅、`npm run build` ✅;3000 端口运行服务实测(tsx watch 已热载新校验):`GET /api/courses?keyword=危机` → total=0;管理端 POST 非法日期 2026-13-99 / 2026-02-30 → 400「日期不合法:… 不是真实存在的日期」;合法 2026-02-28 → 200 创建成功(验证用条目已当场删除,knowledge 与 change_log 无残留)。
+- **提交**:F1 一笔 `fix(backend): ...`;F2 一笔 `chore(db): ...`(seed.sql 无需改动,本笔仅含本 worklog 的任务 4 记录);只 add backend/ 与本 worklog,未 push。
