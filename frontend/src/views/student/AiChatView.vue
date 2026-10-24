@@ -7,7 +7,9 @@ import type { SourceType } from '@/types/api';
 // AI 助手对话页(03-page-spec 3.9,FR-13):
 // - 首次进入生成 crypto.randomUUID() 存 localStorage.ssda_ai_session_id(契约 4.3,匿名,不收集身份信息)
 // - mode=fallback 回答顶部降级提示条;sources 渲染可点击来源;sources=[] 回答原样展示(禁止编造)
-// - 发送中 loading 防重复;400 展示 error.message;历史消息仅本次内存展示
+// - 发送中 loading 防重复;400 展示 error.message
+// - 对话历史按 sessionId 持久化到 localStorage(GUI 验收 D-MED-1,前端侧修复,不加后端接口):
+//   key `ssda_ai_history_<sessionId>`,上限最近 50 条;离开页面再返回自动恢复;"清空对话"同步清除
 interface ChatMessage {
   role: 'user' | 'assistant';
   content: string;
@@ -16,11 +18,52 @@ interface ChatMessage {
   failed?: boolean;
 }
 
+const HISTORY_LIMIT = 50;
+const WELCOME_MESSAGE = '你好！我是新生校园知识库助手,可以回答校园知识、办事指南、活动与课程教师相关问题。AI 回答仅供参考,请以官方通知核实。';
+
+// messages 只存真实对话(欢迎语静态渲染,不入历史,避免恢复时重复)
 const messages = ref<ChatMessage[]>([]);
 const input = ref('');
 const sending = ref(false);
 const sessionId = ensureAiSessionId();
 const listRef = ref<HTMLElement | null>(null);
+const historyKey = `ssda_ai_history_${sessionId}`;
+
+function loadHistory(): ChatMessage[] {
+  try {
+    const raw = localStorage.getItem(historyKey);
+    if (!raw) return [];
+    const parsed: unknown = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return [];
+    return parsed
+      .filter(
+        (m): m is ChatMessage =>
+          !!m &&
+          typeof m === 'object' &&
+          ((m as ChatMessage).role === 'user' || (m as ChatMessage).role === 'assistant') &&
+          typeof (m as ChatMessage).content === 'string'
+      )
+      .slice(-HISTORY_LIMIT);
+  } catch {
+    return []; // 历史数据损坏时不阻塞页面,视为无历史
+  }
+}
+
+/** 持久化真实对话,仅保留最近 HISTORY_LIMIT 条 */
+function saveHistory(): void {
+  try {
+    localStorage.setItem(historyKey, JSON.stringify(messages.value.slice(-HISTORY_LIMIT)));
+  } catch {
+    // localStorage 配额/不可用等异常静默,不影响对话本身
+  }
+}
+
+/** 清空对话:同时清除 localStorage 历史(GUI 验收 D-MED-1) */
+function onClear(): void {
+  messages.value = [];
+  localStorage.removeItem(historyKey);
+  scrollToBottom();
+}
 
 const SOURCE_PATH: Record<SourceType, (id: number) => string> = {
   knowledge: (id) => `/knowledge/${id}`,
@@ -52,6 +95,7 @@ async function onSend(): Promise<void> {
 
   messages.value.push({ role: 'user', content: text });
   input.value = '';
+  saveHistory();
   scrollToBottom();
   sending.value = true;
   try {
@@ -62,9 +106,11 @@ async function onSend(): Promise<void> {
       sources: data.sources,
       mode: data.mode
     });
+    saveHistory();
   } catch (err) {
     const message = (err as { message?: string }).message ?? '系统繁忙,请稍后重试';
     messages.value.push({ role: 'assistant', content: message, failed: true });
+    saveHistory();
   } finally {
     sending.value = false;
     scrollToBottom();
@@ -72,16 +118,23 @@ async function onSend(): Promise<void> {
 }
 
 onMounted(() => {
-  messages.value.push({
-    role: 'assistant',
-    content: '你好！我是新生校园知识库助手,可以回答校园知识、办事指南、活动与课程教师相关问题。AI 回答仅供参考,请以官方通知核实。'
-  });
+  messages.value = loadHistory();
+  scrollToBottom();
 });
 </script>
 
 <template>
   <div class="ai-chat">
-    <h1>AI 助手</h1>
+    <div class="ai-chat__head">
+      <h1>AI 助手</h1>
+      <el-button
+        size="small"
+        data-testid="ai-clear"
+        @click="onClear"
+      >
+        清空对话
+      </el-button>
+    </div>
     <p class="ai-chat__notice">
       回答基于校内知识库检索生成,附来源列表;仅供参考,请核实。本对话仅以匿名会话号记录,不收集任何个人身份信息。
     </p>
@@ -91,6 +144,11 @@ onMounted(() => {
       class="ai-chat__list"
       data-testid="ai-message-list"
     >
+      <div class="ai-chat__row ai-chat__row--assistant">
+        <div class="ai-chat__bubble">
+          {{ WELCOME_MESSAGE }}
+        </div>
+      </div>
       <div
         v-for="(m, i) in messages"
         :key="i"
@@ -175,6 +233,15 @@ onMounted(() => {
 </template>
 
 <style scoped>
+.ai-chat__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+.ai-chat__head h1 {
+  margin: 0;
+}
 .ai-chat__notice {
   margin: 0 0 16px;
   color: #909399;

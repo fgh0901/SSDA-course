@@ -54,3 +54,14 @@
 3. build 有 chunk >500kB 提示(Element Plus 全量引入,脚手架既有方式),功能无影响,如需可后续按需引入优化。
 
 **需总控决策事项**:上述两条契约疑问;另建议为"AI 问答专项(检索命中/拒答/降级/隐私)"与"409 冲突类操作"增补自动化用例(与契约矩阵备注 2/3 一致)。
+
+## 任务 2:GUI 验收缺陷修复(2026-10-24)
+
+### 任务书
+- 依据:`docs/test/gui-acceptance-report.md`(2026-10-24 GUI 验收,缺陷 D-MED-1/2/3、D-LOW-1~5)+ `docs/design/04-ui-design-spec.md` + ssda-frontend 规范
+- 方案裁决(总控):D-MED-1 用前端 localStorage 持久化消息列表(按 sessionId 存 key `ssda_ai_history_<sessionId>`,上限最近 50 条),不加后端接口;D-MED-2 用真实日历校验拦截非法日期(2026-13-99 类),失败提示「日期不合法,请选择真实存在的日期」
+- 范围:仅 `frontend/` 与本 worklog;不碰 backend/、契约、skills;5173 为用户开启的 vite(热更新即时生效),3000 后端不动
+- 顺序:F1 AI 历史保留 → F2 非法日期拦截 → F3 导出反馈 → F4 空关键词提示 → F5 弹窗中文化 → F6 1024 响应式 → F7「全部分类」重置项;每 1~2 项小步提交,lint/test/build 全绿后收尾
+
+### 过程记录
+(修复过程中逐项补记)

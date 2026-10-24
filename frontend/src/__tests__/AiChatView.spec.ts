@@ -136,4 +136,54 @@ describe('AI 助手对话页(FR-13)', () => {
     await wrapper.find('[data-testid="ai-send"]').trigger('click');
     expect(aiChatMock).not.toHaveBeenCalled();
   });
+
+  it('D-MED-1 发送后重新进入页面:历史对话从 localStorage 恢复', async () => {
+    aiChatMock.mockResolvedValue({
+      answer: '校园卡遗失后请先挂失,再携带身份证补办。',
+      sources: [{ type: 'knowledge', id: 12, title: '校园卡遗失补办流程', source: '校信息化办公室官网' }],
+      mode: 'fallback',
+      retriever: 'local_kb'
+    } as AiChatResponse);
+    const first = mountView();
+    await flushPromises();
+    await send(first, '校园卡丢了怎么补办?');
+    first.unmount();
+
+    const second = mountView();
+    await flushPromises();
+    expect(second.text()).toContain('校园卡丢了怎么补办?');
+    expect(second.text()).toContain('校园卡遗失后请先挂失,再携带身份证补办。');
+    expect(second.find('[data-testid="ai-fallback-tip"]').exists()).toBe(true);
+    // 历史按 sessionId 持久化且欢迎语不重复入库
+    const raw = localStorage.getItem('ssda_ai_history_9b6f0c1e-5d3a-4a2b-8e9f-1c2d3e4f5a6b');
+    expect(raw).toBeTruthy();
+    const saved = JSON.parse(raw ?? '[]') as Array<{ content: string }>;
+    expect(saved).toHaveLength(2);
+    expect(saved.filter((m) => m.content.includes('新生校园知识库助手'))).toHaveLength(0);
+  });
+
+  it('D-MED-1 清空对话:清空消息列表并移除 localStorage 历史', async () => {
+    aiChatMock.mockResolvedValue({ answer: '回答', sources: [], mode: 'deepseek', retriever: 'local_kb' } as AiChatResponse);
+    const wrapper = mountView();
+    await flushPromises();
+    await send(wrapper, '第一个问题');
+
+    await wrapper.find('[data-testid="ai-clear"]').trigger('click');
+    await flushPromises();
+
+    expect(localStorage.getItem('ssda_ai_history_9b6f0c1e-5d3a-4a2b-8e9f-1c2d3e4f5a6b')).toBeNull();
+    expect(wrapper.text()).not.toContain('第一个问题');
+    // 清空后欢迎语仍在,可继续提问
+    expect(wrapper.text()).toContain('新生校园知识库助手');
+  });
+
+  it('D-MED-1 历史超过 50 条时仅保留最近 50 条', async () => {
+    const key = 'ssda_ai_history_9b6f0c1e-5d3a-4a2b-8e9f-1c2d3e4f5a6b';
+    const overflow = Array.from({ length: 60 }, (_, i) => ({ role: 'user', content: `问题 ${i + 1}` }));
+    localStorage.setItem(key, JSON.stringify(overflow));
+    const wrapper = mountView();
+    await flushPromises();
+    expect(wrapper.text()).not.toContain('问题 1 ');
+    expect(wrapper.text()).toContain('问题 60');
+  });
 });
