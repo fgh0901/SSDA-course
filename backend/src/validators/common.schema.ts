@@ -30,5 +30,7 @@ export const idParamSchema = z.object({
     .positive('id 必须为正整数')
 });
 
+export type Pagination = z.infer<typeof paginationSchema>;
+
 /** 是否启用/上架/核实字段:0 或 1 */
 export const flagSchema = z.union([z.literal(0), z.literal(1)]);

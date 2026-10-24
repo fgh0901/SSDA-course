@@ -1,11 +1,11 @@
 import type { NextFunction, Request, Response } from 'express';
-import { z } from 'zod';
 import { ok } from '../utils/http';
 import { validated } from '../middlewares/validate';
 import * as courseService from '../services/course.service';
 import * as teacherService from '../services/teacher.service';
 import type {
   CourseQuery,
+  CourseTeacherParams,
   CourseTeacherUpsert,
   CourseUpsert,
   TeacherQuery,
@@ -184,13 +184,10 @@ export async function addRelation(req: Request, res: Response, next: NextFunctio
   }
 }
 
-/** DELETE /api/admin/courses/:id/teachers/:relationId(契约 3.18) */
-export async function removeRelation(req: Request, res: Response, next: NextFunction) {
+/** DELETE /api/admin/courses/:id/teachers/:relationId(契约 3.18;校验走路由级 validate 中间件,F4) */
+export async function removeRelation(_req: Request, res: Response, next: NextFunction) {
   try {
-    const params = z.object({
-      id: z.coerce.number().int().positive(),
-      relationId: z.coerce.number().int().positive('relationId 必须为正整数')
-    }).parse(req.params);
+    const params = validated<CourseTeacherParams>(res, 'params');
     ok(res, await courseService.removeRelation(params.id, params.relationId));
   } catch (err) {
     next(err);

@@ -1,10 +1,13 @@
 import request from 'supertest';
 import { createApp } from '../src/app';
 import { execute } from '../src/config/db';
-import { cleanupByMark, insertCourse, insertLocation, insertRelation, insertTeacher, MARK } from './helpers';
+import { cleanupByMark, createAdmin, insertCourse, insertLocation, insertRelation, insertTeacher, login, MARK } from './helpers';
 
 const app = createApp();
+const USERNAME = `${MARK}admin-ft`;
+const PASSWORD = 'test-pass-123';
 
+let token: string;
 let courseId: number;
 let noRelCourseId: number;
 let teacherId: number;
@@ -14,6 +17,8 @@ let relationId: number;
 
 beforeAll(async () => {
   await cleanupByMark();
+  await createAdmin(USERNAME, PASSWORD);
+  token = await login(app, USERNAME, PASSWORD);
   officeLocId = await insertLocation({ name: `${MARK}理学楼302`, building: `${MARK}理学楼` });
   classLocId = await insertLocation({ name: `${MARK}第一教室A101`, building: `${MARK}第一教学楼` });
   courseId = await insertCourse({ name: `${MARK}高等数学A上`, code: `${MARK}MATH1` });
@@ -101,5 +106,26 @@ describe('教师查询(GET /api/teachers,契约 2.12/2.13,M06)', () => {
   it('404 分支:教师不存在', async () => {
     const res = await request(app).get('/api/teachers/999999');
     expect(res.status).toBe(404);
+  });
+});
+
+describe('任教关系参数校验(体检修复 F4:统一 validate 中间件 + 中文文案,审计 A-06)', () => {
+  it('TC-08 DELETE /api/admin/courses/1/teachers/abc:400 且 message 为中文(不含 zod 英文原文)', async () => {
+    const res = await request(app)
+      .delete('/api/admin/courses/1/teachers/abc')
+      .set('Authorization', `Bearer ${token}`);
+    expect(res.status).toBe(400);
+    expect(res.body.success).toBe(false);
+    expect(res.body.error.code).toBe('VALIDATION_ERROR');
+    expect(res.body.error.message).toContain('relationId');
+    expect(res.body.error.message).not.toMatch(/Invalid input|received NaN|expected number/i);
+  });
+
+  it('TC-08 id 非数字:400 且 message 为中文', async () => {
+    const res = await request(app)
+      .delete('/api/admin/courses/abc/teachers/1')
+      .set('Authorization', `Bearer ${token}`);
+    expect(res.status).toBe(400);
+    expect(res.body.error.message).toContain('id 必须为数字');
   });
 });

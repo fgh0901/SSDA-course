@@ -2,14 +2,14 @@ import { Router } from 'express';
 import { asyncHandler } from '../utils/http';
 import { requireAdmin } from '../middlewares/auth';
 import { validate } from '../middlewares/validate';
-import { idParamSchema } from '../validators/common.schema';
-import { adminKnowledgeQuerySchema, knowledgeReviewSchema, knowledgeUpsertSchema } from '../validators/knowledge.schema';
+import { idParamSchema, paginationSchema } from '../validators/common.schema';
+import { adminKnowledgeQuerySchema, expiredQuerySchema, knowledgeReviewSchema, knowledgeUpsertSchema } from '../validators/knowledge.schema';
 import { loginSchema } from '../validators/auth.schema';
 import { categoryUpsertSchema } from '../validators/category.schema';
 import { adminServiceQuerySchema, serviceUpsertSchema } from '../validators/service.schema';
 import { adminActivityQuerySchema, activityUpsertSchema } from '../validators/activity.schema';
 import { locationQuerySchema, locationUpsertSchema } from '../validators/location.schema';
-import { courseQuerySchema, courseTeacherUpsertSchema, courseUpsertSchema, teacherQuerySchema, teacherUpsertSchema } from '../validators/course.schema';
+import { courseQuerySchema, courseTeacherParamsSchema, courseTeacherUpsertSchema, courseUpsertSchema, teacherQuerySchema, teacherUpsertSchema } from '../validators/course.schema';
 import { aiLogQuerySchema } from '../validators/ai-log.schema';
 import * as adminKnowledge from '../controllers/admin-knowledge.controller';
 import * as categoryController from '../controllers/category.controller';
@@ -32,7 +32,7 @@ adminRouter.use(guarded);
 
 // 知识管理(注意:expired 必须注册在 /:id 之前)
 guarded.get('/knowledge', validate(adminKnowledgeQuerySchema, 'query'), asyncHandler(adminKnowledge.list));
-guarded.get('/knowledge/expired', asyncHandler(adminKnowledge.expired));
+guarded.get('/knowledge/expired', validate(expiredQuerySchema, 'query'), asyncHandler(adminKnowledge.expired));
 guarded.get('/knowledge/:id', validate(idParamSchema, 'params'), asyncHandler(adminKnowledge.detail));
 guarded.post('/knowledge', validate(knowledgeUpsertSchema), asyncHandler(adminKnowledge.create));
 guarded.put('/knowledge/:id', validate(idParamSchema, 'params'), validate(knowledgeUpsertSchema), asyncHandler(adminKnowledge.update));
@@ -40,7 +40,12 @@ guarded.delete('/knowledge/:id', validate(idParamSchema, 'params'), asyncHandler
 guarded.post('/knowledge/:id/submit-review', validate(idParamSchema, 'params'), asyncHandler(adminKnowledge.submitReview));
 guarded.post('/knowledge/:id/review', validate(idParamSchema, 'params'), validate(knowledgeReviewSchema), asyncHandler(adminKnowledge.review));
 guarded.post('/knowledge/:id/takedown', validate(idParamSchema, 'params'), asyncHandler(adminKnowledge.takedown));
-guarded.get('/knowledge/:id/change-logs', asyncHandler(adminKnowledge.changeLogs));
+guarded.get(
+  '/knowledge/:id/change-logs',
+  validate(idParamSchema, 'params'),
+  validate(paginationSchema, 'query'),
+  asyncHandler(adminKnowledge.changeLogs)
+);
 
 // 分类管理
 guarded.get('/categories', asyncHandler(categoryController.listAdmin));
@@ -87,6 +92,7 @@ guarded.get('/courses/:id/teachers', validate(idParamSchema, 'params'), asyncHan
 guarded.post('/courses/:id/teachers', validate(idParamSchema, 'params'), validate(courseTeacherUpsertSchema), asyncHandler(courseController.addRelation));
 guarded.delete(
   '/courses/:id/teachers/:relationId',
+  validate(courseTeacherParamsSchema, 'params'),
   asyncHandler(courseController.removeRelation)
 );
 

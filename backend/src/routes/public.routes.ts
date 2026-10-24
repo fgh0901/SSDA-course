@@ -7,6 +7,7 @@ import { serviceQuerySchema } from '../validators/service.schema';
 import { activityQuerySchema } from '../validators/activity.schema';
 import { locationQuerySchema } from '../validators/location.schema';
 import { courseQuerySchema, teacherQuerySchema } from '../validators/course.schema';
+import { searchQuerySchema } from '../validators/search.schema';
 import * as categoryController from '../controllers/category.controller';
 import * as knowledgeController from '../controllers/knowledge.controller';
 import * as serviceController from '../controllers/service.controller';
@@ -46,4 +47,4 @@ publicRouter.get('/courses/:id', validate(idParamSchema, 'params'), asyncHandler
 publicRouter.get('/teachers', validate(teacherQuerySchema, 'query'), asyncHandler(courseController.listTeachers));
 publicRouter.get('/teachers/:id', validate(idParamSchema, 'params'), asyncHandler(courseController.teacherDetail));
 
-publicRouter.get('/search', asyncHandler(searchController.aggregate));
+publicRouter.get('/search', validate(searchQuerySchema, 'query'), asyncHandler(searchController.aggregate));

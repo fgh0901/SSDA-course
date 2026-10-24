@@ -59,7 +59,16 @@ export const knowledgeReviewSchema = z
     message: '驳回时必须填写备注(comment)'
   });
 
+/** 过期工作台 query(契约 3.10;原控制器内联 schema 抽出统一走 validate 中间件,F4) */
+export const expiredQuerySchema = z
+  .object({
+    state: z.enum(['expired', 'expiring'], { error: 'state 取值非法,应为 expired 或 expiring' }).optional(),
+    days: z.coerce.number({ error: 'days 必须为数字' }).int('days 必须为整数').min(1, 'days 必须 ≥1').default(7)
+  })
+  .merge(paginationSchema);
+
 export type KnowledgeQuery = z.infer<typeof knowledgeQuerySchema>;
 export type AdminKnowledgeQuery = z.infer<typeof adminKnowledgeQuerySchema>;
 export type KnowledgeUpsert = z.infer<typeof knowledgeUpsertSchema>;
 export type KnowledgeReview = z.infer<typeof knowledgeReviewSchema>;
+export type ExpiredQuery = z.infer<typeof expiredQuerySchema>;

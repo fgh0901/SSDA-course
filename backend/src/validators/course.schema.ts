@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { keywordSchema, paginationSchema } from './common.schema';
+import { idParamSchema, keywordSchema, paginationSchema } from './common.schema';
 
 export const courseQuerySchema = paginationSchema.extend({
   keyword: keywordSchema,
@@ -34,8 +34,18 @@ export const courseTeacherUpsertSchema = z.object({
   schedule: z.string().trim().max(100, '上课时间最长 100 字符').optional()
 });
 
+/** 任教关系路径参数(契约 3.18;id 复用公共中文文案,体检修复 F4) */
+export const courseTeacherParamsSchema = z.object({
+  id: idParamSchema.shape.id,
+  relationId: z.coerce
+    .number({ error: 'relationId 必须为数字' })
+    .int('relationId 必须为整数')
+    .positive('relationId 必须为正整数')
+});
+
 export type CourseQuery = z.infer<typeof courseQuerySchema>;
 export type CourseUpsert = z.infer<typeof courseUpsertSchema>;
 export type TeacherUpsert = z.infer<typeof teacherUpsertSchema>;
 export type TeacherQuery = z.infer<typeof teacherQuerySchema>;
 export type CourseTeacherUpsert = z.infer<typeof courseTeacherUpsertSchema>;
+export type CourseTeacherParams = z.infer<typeof courseTeacherParamsSchema>;

@@ -4,11 +4,10 @@ import { validated } from '../middlewares/validate';
 import { getAdmin } from '../middlewares/auth';
 import * as authService from '../services/auth.service';
 import * as knowledgeService from '../services/knowledge.service';
-import type { AdminKnowledgeQuery, KnowledgeReview, KnowledgeUpsert } from '../validators/knowledge.schema';
+import type { AdminKnowledgeQuery, ExpiredQuery, KnowledgeReview, KnowledgeUpsert } from '../validators/knowledge.schema';
 import type { LoginInput } from '../validators/auth.schema';
-import { paginationSchema } from '../validators/common.schema';
+import type { Pagination } from '../validators/common.schema';
 import { idParamSchema } from '../validators/common.schema';
-import { z } from 'zod';
 
 /** POST /api/admin/auth/login(契约 3.1) */
 export async function login(req: Request, res: Response, next: NextFunction) {
@@ -30,16 +29,10 @@ export async function list(_req: Request, res: Response, next: NextFunction) {
   }
 }
 
-/** GET /api/admin/knowledge/expired(契约 3.10;注册顺序须先于 /:id) */
-export async function expired(req: Request, res: Response, next: NextFunction) {
+/** GET /api/admin/knowledge/expired(契约 3.10;注册顺序须先于 /:id;校验走路由级 validate 中间件,F4) */
+export async function expired(_req: Request, res: Response, next: NextFunction) {
   try {
-    const q = z
-      .object({
-        state: z.enum(['expired', 'expiring'], { error: 'state 取值非法,应为 expired 或 expiring' }).optional(),
-        days: z.coerce.number({ error: 'days 必须为数字' }).int('days 必须为整数').min(1, 'days 必须 ≥1').default(7)
-      })
-      .merge(paginationSchema)
-      .parse(req.query);
+    const q = validated<ExpiredQuery>(res, 'query');
     ok(res, await knowledgeService.listExpired(q.state, q.days, q.page, q.pageSize));
   } catch (err) {
     next(err);
@@ -118,16 +111,11 @@ export async function takedown(req: Request, res: Response, next: NextFunction) 
   }
 }
 
-/** GET /api/admin/knowledge/:id/change-logs(契约 3.11) */
-export async function changeLogs(req: Request, res: Response, next: NextFunction) {
+/** GET /api/admin/knowledge/:id/change-logs(契约 3.11;校验走路由级 validate 中间件,F4) */
+export async function changeLogs(_req: Request, res: Response, next: NextFunction) {
   try {
-    const { id } = idParamSchema.parse(req.params);
-    const q = z
-      .object({
-        page: z.coerce.number().int().min(1).default(1),
-        pageSize: z.coerce.number().int().min(1).max(100).default(10)
-      })
-      .parse(req.query);
+    const { id } = validated<{ id: number }>(res, 'params');
+    const q = validated<Pagination>(res, 'query');
     ok(res, await knowledgeService.changeLogs(id, q.page, q.pageSize));
   } catch (err) {
     next(err);
