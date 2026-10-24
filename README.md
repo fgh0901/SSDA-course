@@ -16,6 +16,29 @@
 
 GitHub Actions 工作流位于 `.github/workflows/ci.yml`，在推送到 `main`、针对 `main` 创建 Pull Request 或手动触发时运行。当前工作流检查课程要求和当前版需求分析文档；添加前后端工程配置后，会运行相应的构建和测试步骤。
 
+## 快速启动
+
+前提:MySQL 8.0 与 Node.js 22+。
+
+```bash
+# 1. 初始化数据库(建库 ssda + 灌入演示数据;会覆盖已有同名库数据)
+mysql -u root -p < db/schema.sql
+mysql -u root -p < db/seed.sql
+
+# 2. 配置并启动后端(端口 3000)
+cd backend
+cp .env.example .env        # 修改 DB_PASSWORD 为本机 root 密码;JWT_SECRET 换成 ≥16 位随机串
+npm install
+npm run dev
+
+# 3. 启动前端(端口 5173,已配置 /api 代理到 3000)
+cd ../frontend
+npm install
+npm run dev
+```
+
+访问 http://localhost:5173/ (学生端);管理端 http://localhost:5173/admin/login(账号见下方安全提示)。AI 对话可选配置 DeepSeek:在 `backend/.env` 填入 `DEEPSEEK_API_KEY` 后重启后端即切换为模型生成,未配置时自动走本地检索降级模式。
+
 ## 安全提示
 
 `db/seed.sql` 预置管理员账号 `admin / admin123`，仅用于课程演示环境。演示或部署前请：修改 `backend/.env` 中的 `JWT_SECRET`（勿使用示例值），并通过管理端或脚本修改管理员密码。
