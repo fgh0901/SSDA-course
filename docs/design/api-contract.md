@@ -8,6 +8,7 @@
 | 版本 | 日期 | 变更内容 | 状态 |
 |---|---|---|---|
 | v1.0 | 2026-10-24 | Phase 1 首版:覆盖简报第 5 节全部接口;补充 6 个端点(见 0.1);新增 409 错误码与 AI 对话接口专节;附接口↔FR↔M↔TC 追溯矩阵 | **已冻结**(总控评审+用户确认;裁决:错误码统一 VALIDATION_ERROR、mode=deepseek\|fallback、categories 为唯一分页例外) |
+| v1.1 | 2026-10-24 | 阶段体检补登记(只增不删):公开 `GET /api/locations/:id` 与管理端 services/activities/courses/teachers 四个 `GET /:id` 详情端点(前端编辑回显在用);过期工作台补 `daysRemaining` 字段定义(见 0.1 与 3.10/3.13/3.15/3.16/3.17) | 已冻结(总控裁决,依据 docs/test/requirements-conformance-report.md 缺口 2) |
 
 ### 0.1 相对简报第 5 节的补充端点(只增不删)
 
@@ -19,6 +20,11 @@
 | POST /api/admin/courses/:id/teachers | 维护课程-教师任教关系(M06 涉及 course_teacher 表) | FR-05 |
 | DELETE /api/admin/courses/:id/teachers/:relationId | 删除任教关系 | FR-05 |
 | GET /api/admin/courses/:id/teachers | 查询任教关系 | FR-05 |
+| GET /api/locations/:id | 地点详情(v1.1 补登记,阶段体检发现已实现未登记) | FR-05 |
+| GET /api/admin/services/:id | 办事指南单条详情,编辑回显(v1.1 补登记) | FR-04、FR-08 |
+| GET /api/admin/activities/:id | 活动单条详情,编辑回显(v1.1 补登记) | FR-06、FR-08 |
+| GET /api/admin/courses/:id | 课程单条详情,编辑回显(v1.1 补登记) | FR-05、FR-08 |
+| GET /api/admin/teachers/:id | 教师单条详情,编辑回显(v1.1 补登记) | FR-05、FR-08 |
 
 ---
 
@@ -311,6 +317,11 @@
 
 - 错误分支:400;500。
 
+### 2.9a GET /api/locations/:id
+
+- 权限:公开。说明:地点单条详情(v1.1 补登记)。返回 2.9 列表项字段;404 不存在。
+- 错误分支:404;500。
+
 ### 2.10 GET /api/courses
 
 - 权限:公开。说明:课程列表(含每门课的任教教师简要信息),按 `name` 升序。
@@ -589,7 +600,8 @@
   "success": true,
   "data": {
     "list": [
-      { "id": 12, "title": "2026 年秋季学期校历", "status": "published", "effectiveUntil": "2026-09-30", "state": "expired", "daysOverdue": 24, "updatedAt": "2026-09-02 11:00:00" }
+      { "id": 12, "title": "2026 年秋季学期校历", "status": "published", "effectiveUntil": "2026-09-30", "state": "expired", "daysOverdue": 24, "updatedAt": "2026-09-02 11:00:00" },
+      { "id": 15, "title": "图书馆期中周开放时间调整", "status": "published", "effectiveUntil": "2026-10-27", "state": "expiring", "daysRemaining": 3, "updatedAt": "2026-10-05 09:30:00" }
     ],
     "total": 3,
     "page": 1,
@@ -597,6 +609,8 @@
   }
 }
 ```
+
+- 字段说明(v1.1 补定义):`expired` 项含 `daysOverdue`(已过天数);`expiring` 项含 `daysRemaining`(距过期天数)。
 
 - 错误分支:400;401;403;500。
 
@@ -634,6 +648,7 @@
 ### 3.13 /api/admin/services CRUD
 
 - `GET /api/admin/services`:分页 + keyword + isEnabled 筛选;结构同 2.5(含停用项)。
+- `GET /api/admin/services/:id`:单条详情(编辑回显),字段同 body;404 不存在。【v1.1 补登记】
 - `POST /api/admin/services`:body `{ title(1~100,必填), department(1~100,必填), locationId(number,可选,必须存在), serviceTime(≤100,可选), materials(≤2000,可选), process(≤2000,可选), isEnabled(0/1,默认 1) }`。
 - `PUT /api/admin/services/:id`:全量更新。
 - `DELETE /api/admin/services/:id`:直接删除(无下游引用)。
@@ -646,15 +661,21 @@
 
 ### 3.15 /api/admin/locations CRUD
 
+- `GET /api/admin/locations/:id`:单条详情(编辑回显),字段同 body;404 不存在。【v1.1 补登记】
+
 - body:`{ name(1~100,必填), campus(≤50,必填), building(≤100,可选), floor(≤20,可选), room(≤50,可选), description(≤500,可选) }`。
 - `DELETE /api/admin/locations/:id`:被 service_guide / campus_activity / teacher / course_teacher 任一引用时 **409 CONFLICT**,message 含引用数量。
 
 ### 3.16 /api/admin/courses CRUD
 
+- `GET /api/admin/courses/:id`:单条详情(编辑回显),字段同 body;404 不存在。【v1.1 补登记】
+
 - body:`{ name(1~100,必填), code(1~20,必填,唯一), semester(≤20,可选,格式如 2026-2027-1), description(≤500,可选) }`;400 重名(`"课程代码已存在"`)。
 - `DELETE /api/admin/courses/:id`:存在任教关系时 409。
 
 ### 3.17 /api/admin/teachers CRUD
+
+- `GET /api/admin/teachers/:id`:单条详情(编辑回显),字段同 body(仅公开字段);404 不存在。【v1.1 补登记】
 
 - body:`{ name(1~50,必填), title(≤50,可选), officeLocationId(number,可选), officeHours(≤100,可选) }`;**仅允许公开字段,不接受电话/工号等字段**(多余字段由 zod `strict()` 拒绝,400)。
 - `DELETE /api/admin/teachers/:id`:存在任教关系时 409。

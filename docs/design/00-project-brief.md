@@ -124,6 +124,8 @@ knowledge_category、knowledge、location、teacher、course、course_teacher、
 
 ## 8. 监控与协作规范(全体 Agent 遵守)
 
+0. **小步上库纪律(用户要求,2026-10-24 起)**:每完成一个逻辑单元(一个功能点/一个缺陷修复/一组样式)立即按 Conventional Commits 规范提交(feat/fix/docs/chore/refactor/test),**禁止阶段末一次性大批量提交**;只 `git add` 自己负责的路径;提交前本地 lint/test 必须全绿;总控在里程碑处合并分支。
+
 1. 每个 Agent 在 `docs/worklogs/worklog-<agent>.md` 维护日志:开工写**任务书**(目标/范围/允许改动的文件/预期产出),过程按节点追加(时间戳+做了什么+产出路径+问题决策),结束写**完成报告**(结果/自测情况/遗留问题)。
 2. 子 Agent 不修改契约文档与其他 Agent 的文件;需要变更契约时,在完成报告中提出,由总控裁决并统一修订。
 3. 跨 Agent 唯一事实来源:`docs/design/00-project-brief.md`(本文件)+ `docs/design/api-contract.md` + 本地 skills。
