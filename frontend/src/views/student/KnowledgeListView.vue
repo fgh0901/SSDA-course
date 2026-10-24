@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { onMounted, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
+import { ElMessage } from 'element-plus';
 import { getKnowledgeList } from '@/api/knowledge';
 import { useCategoryStore } from '@/stores/category';
 import KnowledgeCard from '@/components/KnowledgeCard.vue';
@@ -36,10 +37,11 @@ async function fetchList(): Promise<void> {
   }
 }
 
-// 空关键词搜索:提示"请输入关键词"并展示默认列表,不发请求(TC-02)
+// 空关键词搜索:toast + 页内提示,并展示默认列表,不发关键词请求(TC-02 / GUI 验收 D-LOW-1)
 function onSearch(): void {
   if (!keyword.value.trim()) {
     searchedEmptyKeyword.value = true;
+    ElMessage.warning('请输入关键词');
     page.value = 1;
     categoryId.value = undefined;
     void fetchList();
@@ -50,7 +52,9 @@ function onSearch(): void {
   void fetchList();
 }
 
-function onCategoryChange(): void {
+function onCategoryChange(val: number | undefined): void {
+  // 「全部分类」重置项(占位值 0):清空筛选并刷新(GUI 验收 D-LOW-5)
+  categoryId.value = val === 0 ? undefined : val;
   page.value = 1;
   searchedEmptyKeyword.value = false;
   // 分类同步 URL query,可分享回跳
@@ -117,6 +121,11 @@ onMounted(async () => {
         data-testid="knowledge-category"
         @change="onCategoryChange"
       >
+        <el-option
+          label="全部分类"
+          :value="0"
+          data-testid="category-all"
+        />
         <el-option
           v-for="c in categoryStore.enabledList"
           :key="c.id"

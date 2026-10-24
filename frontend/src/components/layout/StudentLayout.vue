@@ -155,6 +155,37 @@ function goCategory(categoryId: number): void {
 .student-layout__search {
   width: 280px;
 }
+/* 窄屏顶栏自适应(GUI 验收 D-LOW-3):≈1024px 下压缩间距与搜索宽度,
+   搜索框保持固定可用宽度不塌缩,搜索按钮不溢出视口 */
+.student-layout__search :deep(.el-input) {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.student-layout__search :deep(.el-button) {
+  flex-shrink: 0;
+}
+@media (max-width: 1280px) {
+  .student-layout__header {
+    gap: 12px;
+  }
+  .student-layout__brand {
+    gap: 10px;
+  }
+  .student-layout__menu :deep(.el-menu-item) {
+    padding: 0 12px;
+  }
+  .student-layout__search {
+    width: 200px;
+  }
+}
+@media (max-width: 1100px) {
+  .student-layout__search {
+    width: 170px;
+  }
+  .student-layout__logo {
+    font-size: 16px;
+  }
+}
 .student-layout__main {
   max-width: 1080px;
   width: 100%;

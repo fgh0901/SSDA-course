@@ -1,7 +1,11 @@
 <script setup lang="ts">
-// 根组件:仅承载路由出口,Phase 2 由前端 Agent 扩展全局布局
+import zhCn from 'element-plus/es/locale/lang/zh-cn';
+// 根组件:el-config-provider 统一 Element Plus 中文 locale(GUI 验收 D-LOW-2),
+// MessageBox 确认弹窗(Cancel/OK → 取消/确定)、DatePicker、Pagination 等组件文案全部中文化
 </script>
 
 <template>
-  <router-view />
+  <el-config-provider :locale="zhCn">
+    <router-view />
+  </el-config-provider>
 </template>

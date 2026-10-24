@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
+import { ElMessage } from 'element-plus';
 import { searchAll } from '@/api/search';
 import type { SearchGroup, SearchResult } from '@/types/search';
 import type { SourceType } from '@/types/api';
@@ -67,7 +68,10 @@ function onTypeChange(): void {
 
 function onSearch(): void {
   const kw = keyword.value.trim();
-  if (!kw) return; // SearchBar 已拦截,此处兜底
+  if (!kw) {
+    ElMessage.warning('请输入关键词'); // 与 SearchBar/知识列表一致,不再静默忽略(D-LOW-1)
+    return;
+  }
   router.replace({ query: { keyword: kw } });
   void fetchResult();
 }

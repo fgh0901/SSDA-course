@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { flushPromises, mount } from '@vue/test-utils';
 import { createPinia } from 'pinia';
 import { createMemoryHistory, createRouter } from 'vue-router';
-import ElementPlus from 'element-plus';
+import ElementPlus, { ElMessage } from 'element-plus';
 
 vi.mock('@/api/knowledge', () => ({ getKnowledgeList: vi.fn() }));
 vi.mock('@/api/categories', () => ({ getCategories: vi.fn().mockResolvedValue({ list: [] }) }));
@@ -88,5 +88,35 @@ describe('知识列表页(TC-02 空关键词 / TC-03 无结果)', () => {
     await mountView();
     await flushPromises();
     expect(mockedList).toHaveBeenCalledWith(expect.objectContaining({ page: 1, pageSize: 10 }));
+  });
+
+  it('D-LOW-1 空关键词提交:toast 提示"请输入关键词",不发关键词请求', async () => {
+    mockedList.mockResolvedValue({ list: [item], total: 1, page: 1, pageSize: 10 });
+    const warnSpy = vi.spyOn(ElMessage, 'warning').mockImplementation(() => ({ close: () => undefined }) as never);
+    try {
+      const wrapper = await mountView();
+      await flushPromises();
+      await wrapper.find('[data-testid="knowledge-search"]').trigger('click');
+      await flushPromises();
+      expect(warnSpy).toHaveBeenCalledWith('请输入关键词');
+      expect(mockedList).toHaveBeenLastCalledWith(expect.objectContaining({ keyword: undefined }));
+    } finally {
+      warnSpy.mockRestore();
+    }
+  });
+
+  it('D-LOW-5 分类下拉含「全部分类」重置项:选中后清空筛选并刷新列表', async () => {
+    mockedList.mockResolvedValue({ list: [], total: 0, page: 1, pageSize: 10 });
+    const wrapper = await mountView('/knowledge?categoryId=2');
+    await flushPromises();
+    expect(mockedList).toHaveBeenLastCalledWith(expect.objectContaining({ categoryId: 2 }));
+
+    const select = wrapper.findComponent({ name: 'ElSelect' });
+    expect(select.exists()).toBe(true);
+    // 模拟选择「全部分类」(占位值 0):categoryId 清空、URL 同步清除并刷新
+    select.vm.$emit('change', 0);
+    await flushPromises();
+    const lastCall = mockedList.mock.calls.at(-1)?.[0] as Record<string, unknown>;
+    expect(lastCall.categoryId).toBeUndefined();
   });
 });

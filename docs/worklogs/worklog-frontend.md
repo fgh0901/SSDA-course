@@ -65,3 +65,31 @@
 
 ### 过程记录
 (修复过程中逐项补记)
+- 2026-10-24 F1(D-MED-1):AiChatView 对话历史按 sessionId 持久化到 localStorage(key `ssda_ai_history_<sessionId>`,上限最近 50 条,欢迎语静态渲染不入库避免恢复时重复);发送/接收/失败同步写入;新增「清空对话」按钮同步清 localStorage;新增 3 条 Vitest 用例。浏览器实测:离开再返回历史恢复、清空后只剩欢迎语且历史键被移除。
+- 2026-10-24 F2(D-MED-2):新增 `utils/dateGuard.ts` 自定义指令 `v-date-guard`——el-date-picker 会把手输 2026-13-99 按日历溢出规则静默解析为 2027-04-09,表单规则(校验 model 值)无法感知,故在指令宿主上以捕获阶段监听内层 input 的 Enter keydown/change/blur 三条提交路径,原始文本为完整日期前缀且非真实日历日期时阻断提交并 toast「日期不合法,请选择真实存在的日期」。isDateTimeString 补日期部分语义校验;knowledgeRules 区分格式错误(YYYY-MM-DD)与语义错误两类文案。应用范围:知识管理(2 个日期)、活动管理(2 个日期时间)、AI 记录 daterange 过滤器;知识/活动 onSave 前增加 isDateString/isDateTimeString 兜底。
+  - 踩坑记录:①指令直接挂 el-date-picker 无效——其根节点是 ElTooltip 组件(非元素根),Vue 静默跳过指令;②EP 在自身 wrapper 上以捕获阶段监听 blur 并在 afterBlur 中解析提交,不走 change 事件。最终方案:`<div v-date-guard class="date-guard-host">` 包裹(全局样式 display:contents 不参与布局)。浏览器实测三条路径均拦截、合法日期正常提交。
+- 2026-10-24 F3(D-MED-3):修复 `api/ai.ts` exportAiLogs 的 blob 解包错误(拦截器对 blob 原样返回 Blob,原代码误取 `resp.data`(undefined)导致 createObjectURL 必抛、导出从未成功过);http 拦截器对 blob 请求不再重复弹错,由调用方给具体原因;AiLogView 导出成功文案改为「导出成功,已开始下载」,失败 toast 具体原因;http.spec 补 blob 成功/失败 2 条用例。浏览器实测:绿色成功 toast + 真实下载事件被捕获。
+- 2026-10-24 F4(D-LOW-1):知识列表空关键词提交在既有页内提示外补 ElMessage.warning('请输入关键词');聚合搜索页 onSearch 由静默 return 改为同文案 toast,与 SearchBar 一致。浏览器复现测试者场景:清空后回车 → toast + 页内提示 + 不回填旧词 + 展示默认列表(注:测试报告中的"静默回填"复现为测试工具 fill('') 未生效,应用本身无回填逻辑,已在报告中说明)。
+- 2026-10-24 F5(D-LOW-2):App.vue 以 el-config-provider 包裹 zh-cn locale,MessageBox 确认弹窗由 Cancel/OK 变为 取消/确定,DatePicker/Pagination 等文案同步中文化。浏览器实测退出登录弹窗为「取消/确定」。
+- 2026-10-24 F6(D-LOW-3/4):StudentLayout 顶栏增加 1280/1100 两档媒体查询(压缩间距、菜单内边距与搜索框宽度,搜索框固定可用宽度不塌缩、按钮 flex-shrink:0 不溢出);知识管理表格取消操作列 fixed="right",窄屏改横向滚动不再遮挡状态列。1024 宽浏览器截图验证两端均正常。
+- 2026-10-24 F7(D-LOW-5):知识列表分类下拉新增「全部分类」重置项(占位值 0,选中后 categoryId 清空、URL 同步清除并刷新),文案与行为一致。浏览器实测:选项可见,选择入学事务 → ?categoryId=1,再选全部分类 → URL 清空、列表刷新。
+
+### 完成报告
+
+**结果**:F1~F7 全部完成。`npm run lint`(0 problems)、`npm test`(9 文件 54 用例通过,较修复前 +14:AI 历史 3、dateGuard 5、datetime 2、http blob 2、知识列表 2)、`npm run build`(vue-tsc 0 错误 + vite build 成功,chunk>500kB 警告为既有遗留)三项全绿。
+
+**逐项改动文件与自测证据**:
+- F1:`src/views/student/AiChatView.vue`、`src/__tests__/AiChatView.spec.ts`(+3 用例)| 浏览器:跨页返回历史恢复、清空按钮生效
+- F2:`src/utils/dateGuard.ts`(新增)、`src/utils/datetime.ts`、`src/utils/knowledgeRules.ts`、`src/views/admin/KnowledgeManageView.vue`、`src/views/admin/ActivityManageView.vue`、`src/views/admin/AiLogView.vue`(daterange)、`src/styles/index.css`(.date-guard-host)、`src/__tests__/dateGuard.spec.ts`(新增 5)、`datetime.spec.ts`(新增 2)、`knowledgeRules.spec.ts`(更新)| 浏览器:2026-13-99/2026-02-30 在 Enter/change/blur 三条路径均被拦截且不解析,合法日期放行
+- F3:`src/api/http.ts`(blob 错误不重复弹)、`src/api/ai.ts`(blob 解包修复)、`src/views/admin/AiLogView.vue`、`src/__tests__/http.spec.ts`(+2)| 浏览器:导出出现成功 toast 并捕获到下载事件
+- F4:`src/views/student/KnowledgeListView.vue`、`SearchResultView.vue`、`KnowledgeListView.spec.ts`(+2)| 浏览器:空关键词提交 toast + 页内提示 + 不回填
+- F5:`src/App.vue` | 浏览器:确认弹窗按钮 取消/确定
+- F6:`src/components/layout/StudentLayout.vue`、`src/views/admin/KnowledgeManageView.vue` | 浏览器 1024 宽截图:顶栏不塌缩不溢出,管理端表格无遮挡
+- F7:`src/views/student/KnowledgeListView.vue` | 浏览器:「全部分类」选项可见,选中即重置
+
+**遗留问题**:
+1. 输入非法日期被守卫阻断时,EP 的失焦收起面板动作也被一并阻断(面板保持展开直到用户改正或按 Esc)——为保证拦截效果的有意取舍,实际使用无功能影响。
+2. GUI 报告"数据质量观察"两条(课程脏数据「危机」、录入校验建议)属数据/后端范畴,不在本次前端范围。
+3. 提交数据无脏数据残留:F2 浏览器自测全程未保存任何表单;AI 对话自测新增 1 条真实问答记录(与验收 A9 同类测试数据)。
+
+**需总控决策事项**:无新增契约变更;导出下载方式偏差仍沿任务 1 登记(前端 blob 下载,功能已验证可用)。
