@@ -1,0 +1,105 @@
+# SSDA 需求符合性审查报告
+
+> 审查人:需求与设计 Agent | 日期:2026-10-24 | 性质:只读审查(未改任何代码/契约/skills)
+> 基线:`docs/design/00-project-brief.md`(FR/M/P/TC)、`api-contract.md`(冻结 v1.0)、`01-system-design.md`、`03-page-spec.md`
+> 实现:`backend/src/`、`frontend/src/`、`db/schema.sql`、`db/seed.sql`、双端 tests
+> 证据一律标注 文件:行号;无法静态确认的标注"待人工确认"。
+
+## 1. 总体结论:**基本符合**
+
+- **符合面**:FR-01~12 与 M01~M10、P01~P05 的接口、页面、测试三点齐备;实现与契约 v1.0 的路径、字段、状态机、错误码、分页口径一致性良好;无"收藏/学生账号/在线报名"等本期不做项的实现。数据库 12 表、约束、种子数据与设计文档一致。
+- **主要缺口(P1)**:FR-13 的 **LLM 生成部分未实装**——`DeepSeekAdapter.chatCompletion` 为占位 stub,调用即抛错,`mode=deepseek` 路径实际不可达,当前所有 AI 回答均走 `fallback` 模板(降级链路本身完整、合规)。代码注释标明"Phase 2 预留、Phase 3 接入",是否按阶段豁免**待总控确认**。
+- **次要缺口(P2/P3)**:5 个端点未按契约登记流程补登记;TC-11+ 编号未由测试侧登记;少量风格偏差。详见第 5 节。
+
+## 2. FR 逐条核对表(接口 / 页面 / 测试 三点齐备性)
+
+判定口径:✔=齐备;◐=齐备但含缺口或待确认;✘=缺失。
+
+| FR | 判定 | 接口实现(证据) | 页面实现(证据) | 测试覆盖(证据) |
+|---|---|---|---|---|
+| FR-01 分类展示 | ✔ | `GET /api/categories`(public.routes.ts:21;category.dao.ts:16 仅启用+sortOrder 排序) | HomeView 分类导航、KnowledgeListView 分类筛选 | categories.test.ts;TC-05(knowledge.test.ts) |
+| FR-02 关键词搜索+空词提示 | ✔ | `GET /api/knowledge` keyword(search.controller.ts:11-35 服务端 400 兜底) | SearchBar.vue:18 空词拦截不发请求;KnowledgeListView.vue:39,128 | knowledge.test/search.test(TC-01/02/03) |
+| FR-03 详情四要素 | ✔ | `GET /api/knowledge/:id` 返回 title/content/source/updatedAt/status(knowledge.service.ts:49-53) | KnowledgeDetailView.vue(TC-04 展示断言) | knowledge.test.ts"TC-04"用例 |
+| FR-04 办事指南 | ✔ | `GET /api/services(/:id)`:部门/地点/时间/材料/流程(service-guide.service.ts:38-42) | ServiceListView/ServiceDetailView | services.test.ts(CRUD 全流程) |
+| FR-05 课程/教师/地点 | ✔ | `/api/locations`、`/api/courses(/:id)`、`/api/teachers(/:id)`(course.service.ts:8-17 嵌套组装) | LocationView、CourseTeacherView 双 Tab+抽屉 | courses-teachers.test.ts、locations.test.ts |
+| FR-06 活动查询 | ✔ | `GET /api/activities` time=upcoming/past(activity.dao.ts:32-35) | ActivityListView(三态 Tab)/ActivityDetailView | activities.test.ts |
+| FR-07 管理员鉴权 | ✔ | requireAdmin 统一 401/403(middlewares/auth.ts:19-35;admin.routes.ts:29-31) | 路由守卫+响应拦截(router/index.ts:56-70;api/http.ts:44-52) | admin-auth.test.ts(TC-07 全分支) |
+| FR-08 知识 CRUD+校验 | ✔ | knowledgeUpsertSchema(validators/knowledge.schema.ts:35-49)+ CRUD(admin.routes.ts:34-43) | KnowledgeManageView 表单与操作列 | admin-knowledge.test.ts(TC-06/08) |
+| FR-09 分类维护 | ✔ | `/api/admin/categories` CRUD(admin.routes.ts:46-49;重名 400、关联删除 409 含条数) | CategoryManageView(knowledgeCount 预警,category.dao.ts:24) | categories.test.ts;TC 无直接编号(契约矩阵备注 2,自动化已覆盖) |
+| FR-10 状态与有效期 | ✔ | 四态状态机+isExpired 服务端计算(knowledge.service.ts:44-46,92-184)+过期工作台(listExpired:187-202) | StatusTag/ExpiredBanner.vue:11/KnowledgeCard.vue:30/ExpiredWorkbenchView | knowledge.test+admin-knowledge.test(TC-09 多分支) |
+| FR-11 来源与更新时间 | ✔ | source 必填(schema)+change-logs(admin.routes.ts:43)+全链路 updatedAt | PageFooter.vue:7 来源声明;详情/卡片展示 | "缺来源:400 且 message 含'来源'"(admin-knowledge.test.ts) |
+| FR-12 收藏(本期不做) | ✔ | 无任何实现(全仓 grep 无 favorite/收藏) | 无 | 无(符合预期) |
+| FR-13 AI 问答 | **◐** | `POST /api/ai/chat` 全链路:校验(ai.schema.ts:4-12)→检索(local-kb-retriever.ts:135 可信阈值,仅 published)→拒答(chat-service.ts:81)→降级(50)→落库;**但 LLM 适配器为 stub** | AiChatView.vue:105-127 降级提示/来源/防重复;AiFloatEntry;AiLogView+JSONL 导出(ai-log.controller.ts:14-15) | ai-chat.test.ts 12 用例(检索命中/未命中/400/落库/隐私);**mode=deepseek 路径无测试也无法测试(未实装)** |
+
+## 3. M01~M10 模块核对表
+
+| 模块 | 判定 | 关键功能点核对(证据) |
+|---|---|---|
+| M01 分类浏览 | ✔ | 列表/筛选/启用停用:public 仅 isEnabled=1(category.dao.ts:16);管理端开关与停用联动(categories.test.ts) |
+| M02 知识查询与详情 | ✔ | 列表 summary 截断(knowledge.service.ts:15-18)、详情四要素、来源/状态展示齐全 |
+| M03 办事指南 | ✔ | CRUD+查询全齐(service-guide.service.ts:38-42,77-90);地点外键校验(59-61) |
+| M04 活动信息 | ✔ | CRUD+time 三态筛选(activity.dao.ts:32-35);endTime≥startTime DB CHECK(schema.sql:157)+ zod 双保险 |
+| M05 地点查询 | ✔ | keyword/campus/building/floor 组合筛选(validators/location.schema + location.dao.ts:25);按 campus,name 排序 |
+| M06 课程教师 | ✔ | 课程/教师 CRUD+code 唯一+任教关系(schema.sql:208 唯一键;重复 409);**P03 红线:未录入返回空数组**(course.service.ts:37) |
+| M07 聚合检索 | ✔ | 六类并行检索、type 筛选、分组返回 total(search.controller.ts:8-31;search.test.ts) |
+| M08 登录与权限 | ✔ | 登录 bcrypt 校验、token 签发、退出(AdminLayout.vue:15-16、stores/auth.ts:21-28)、401 清 token 跳转(http.ts:16-26) |
+| M09 后台维护与审核 | ✔ | 状态机与契约 3.4~3.9 逐条一致:draft 新增(70-89)/编辑回退 draft(92-115)/仅 draft 可删 409(118-126)/提审 draft\|takedown→pending_review(129-143)/审核 publish\|reject(146-167)/下架(170-184) |
+| M10 有效期与更新追踪 | ✔ | 过期/临期工作台(knowledge.service.ts:187-202;dao:163)、变更日志 7 类 action 全落库(withTransaction)、级联清理(schema.sql:92)、**四态学生端展示规则与 page-spec 第 5 节一致**(detailPublic:49-53 仅 published,takedown 一律 404) |
+
+## 4. P01~P05 流程异常分支核对表
+
+| 流程 | 异常分支 | 落点(证据) | 判定 |
+|---|---|---|---|
+| P01 分类→详情 | 空数据空状态;详情 404 友好页 | KnowledgeListView el-empty"未找到相关结果";KnowledgeDetailView 404 渲染(前端 spec"404:渲染友好页并提供返回入口") | ✔ |
+| P02 搜索办事信息 | 空词不发请求;服务端 400 兜底;无结果提示 | SearchBar.vue:18;search.controller.ts:18(TC-02);search.test.ts"TC-03 groups 空" | ✔ |
+| P03 课程/教师/地点 | 关联未录入不得推断 | CourseTeacherView.vue:303,349"暂无任课信息,以教务系统课表为准";后端空数组(course.service.ts:37)+测试"P03 红线" | ✔ |
+| P04 维护并发布 | 未授权 401/403;zod 400 逐字段;409 状态冲突;发布后学生可见 | admin-auth.test(TC-07×6)、admin-knowledge.test("缺标题/缺来源/无效日期/止早于起/分类停用"、"P04 全流程") | ✔ |
+| P05 过期核实处理 | 过期仍可见+标识;下架后 404;不自动标"真实有效";仅日期识别 | computeIsExpired(knowledge.service.ts:44-46);takedown 后学生端 404(测试"TC-09 下架");listExpired 仅按日期(注释 P05 红线);ExpiredWorkbenchView 提示文案 | ✔ |
+
+## 5. 缺口清单(按严重程度排序)
+
+| # | 级别 | 现象 | 证据 | 建议修复方 | 建议优先级 |
+|---|---|---|---|---|---|
+| 1 | **P1-功能缺口** | FR-13 的 LLM 生成未实装:`DeepSeekAdapter.chatCompletion` 直接抛 LlmError,`createLlmAdapter` 两个分支(未配 Key/已配 Key)最终都走降级,`mode` 恒为 `fallback`,`mode=deepseek` 不可达。契约 2.15/02 设计的"DeepSeek 生成+来源编号引用"当前不可验证。降级链路(检索→模板→拒答→落库)本身完整合规。代码自述"Phase 2 预留、Phase 3 接入" | backend/src/ai/llm/deepseek-adapter.ts:26-32;backend/src/ai/llm/index.ts:20-31;chat-service.ts:73-90 | 后端 AI 模块 Agent(Phase 3 实装 HTTP 调用+超时 20s) | 高——若总控认可分阶段计划则转为"计划内待办",否则本期验收前必须补齐 |
+| 2 | P2-流程缺口 | 5 个端点已实现但未按契约"先登记再实现"流程补登记:公开 `GET /api/locations/:id`(前端未调用,属超范围端点);管理端 `GET /api/admin/services/:id`、`/activities/:id`、`/teachers/:id`、`/courses/:id`(前端编辑回显在用,api/admin.ts 存在对应调用) | backend/src/routes/public.routes.ts:41;admin.routes.ts:53,60,73,80 | 需求与设计 Agent 将端点登记进契约 0.1(总控裁决后);`locations/:id` 建议直接下线 | 中 |
+| 3 | P2-测试管理 | 契约矩阵备注 2 要求增补 TC-11+(AI 问答、分类删除 409、任教关系、日志导出);自动化用例实际已存在(ai-chat.test.ts 12 例、categories.test.ts 409 断言、courses-teachers.test.ts、export JSONL 断言),但 TC-11+ 编号与映射表未登记 | api-contract.md:771-775(备注);backend/tests/ 对应用例 | 测试 Agent 登记 TC-11+ 与映射表 | 中 |
+| 4 | P3-契约微差 | 过期工作台 expiring 组返回 `daysRemaining` 字段,契约 3.10 仅示例 `daysOverdue`,该字段未登记 | backend/src/services/knowledge.service.ts:197 | 需求与设计 Agent 契约修订时补登记 | 低 |
+| 5 | P3-风格偏差 | 4 处校验未走统一 `validate` 中间件,改为控制器内联 zod(功能等价、测试覆盖):`GET /api/search`、`GET /api/admin/knowledge/expired`、`change-logs`、`DELETE .../teachers/:relationId` | backend/src/controllers/search.controller.ts:13-30;admin-knowledge.controller.ts:36-42,125-130;course.controller.ts:189-194 | 后端 Agent 统一为 validate 中间件(或由总控豁免) | 低 |
+| 6 | 待人工确认 | 独立追溯矩阵文件 `docs/requirements/requirements-traceability.md` 未建(契约第 5 节内嵌);`docs/ai-logs/dev-usage-log.md` 已存在但各 Agent 开发日志是否按阶段补录未逐一核对 | worklog 任务 1 完成报告;docs/ai-logs/ | 总控裁决落位方式;各 Agent 补录 | 中 |
+
+**待人工确认事项**:①上述缺口 1 的阶段豁免;②`docs/ai-logs/dev-usage-log.md` 阶段记录完整性;③Seed 管理员口令 `admin123`(db/seed.sql:15 注释)是否仅限演示环境、生产需改——属验收材料提示,非缺陷。
+
+## 6. 超范围实现清单
+
+- `GET /api/locations/:id`(public.routes.ts:41):契约未登记、前端无调用方 → 建议下线或补登记(见缺口 2)。
+- 未发现任何"本期不做"功能被实现:全仓 grep 无收藏/在线报名/支付/学生账号/教务对接/统一身份认证/地图导航的功能代码(seed 数据正文中出现"学号/扫码支付"等字样属业务内容文本,非功能实现)。
+- 其余 4 个管理端 `:id` 详情端点属"有使用场景但未登记"(前端编辑回显依赖),不算冗余,但需补登记走流程。
+
+## 7. 字段一致性抽查结果(抽查 8 项 ≥ 要求的 6 项)
+
+| 接口 | 抽查内容 | 结果 |
+|---|---|---|
+| GET /api/knowledge | summary/source/isVerified/effectiveFrom/effectiveUntil/updatedAt/categoryName | 一致(knowledge.dao.ts:19-41) |
+| GET /api/knowledge/:id | isExpired 服务端计算、404 话术"知识不存在或未发布" | 一致(knowledge.service.ts:44-53) |
+| GET /api/services(/:id) | location 嵌套对象 {id,name,campus,building,floor,room} | 一致(service-guide.service.ts:7-17,38-42) |
+| GET /api/courses/:id | teachers[] 含 relationId/schedule/location{}/office{}/officeHours | 一致(course.service.ts:8-17) |
+| POST /api/admin/knowledge | 7 字段约束与契约 3.4 逐项一致、跨字段日期 refine | 一致(validators/knowledge.schema.ts:35-49) |
+| POST /api/ai/chat | answer/sources/mode/retriever、拒答话术、sources=[] | 一致(chat-service.ts:14,50,81) |
+| GET /api/admin/ai-logs | sessionKey/sources/mode/latencyMs;export=1 JSONL 头与文件名 | 一致(ai-log.controller.ts:14-15) |
+| POST /api/admin/auth/login | token+admin{id,username,role}、401 统一话术、不回哈希 | 一致(middlewares/auth.ts + admin-auth.test.ts) |
+
+## 8. 规范性核对(第二问"开发是否规范")
+
+- 分层:routes→controllers→services→dao 单向,DAO 无业务判断、controller 无 SQL(抽查全部 controller/dao 符合)。
+- SQL 安全:全部参数化占位符,LIKE 通配符位于 SQL 内 CONCAT 参数位(knowledge.dao.ts:32 等 7 处),无字符串拼接用户输入。
+- 鉴权:`/api/admin/*` 除 login 外统一挂 requireAdmin(admin.routes.ts:29-31),401/403 语义与契约 1.5 一致。
+- 响应包与错误:统一 `{success,data|error}`;500 统一"系统繁忙,请稍后重试"且不泄露堆栈(middlewares/error.ts:36);health 降级探测(app.ts:23-35)。
+- AI 合规:system prompt 不含用户输入(chat-service.ts:19-40);隐私仅匿名 sessionId(ai.schema.ts:5 UUID 校验;ai-chat.test"隐私红线"断言);DB 层 session_key 唯一(schema.sql:225)。
+- 前端:禁 v-html(全仓仅注释提及)、localStorage key 与契约一致(ssda_token/ssda_admin_username/ssda_ai_session_id)、路由表与 03-page-spec 逐条一致(router/index.ts:9-45)。
+- 数据库:12 表与 ER 图一致;CHECK 约束(75,157)、唯一键(31,47,190,208,225)、级联删除(92,246)与设计文档第 3 节 6 条业务约束吻合;seed 覆盖四态与已过期样例。
+
+## 9. 测试覆盖汇总
+
+- 后端:16 个测试文件、约 105 个 it,TC-01~10 全部有直接映射(含 TC-07×6 分支、TC-08 五类校验、TC-09 四个分支、TC-10 泄露反断言)。
+- 前端:8 个 spec、约 36 个 it,覆盖 TC-02/03/04/09 展示规则、TC-08 表单校验、TC-07 守卫、TC-10 错误处理。
+- 缺口:TC-11+ 编号未登记(见缺口 3);FR-13 的 mode=deepseek 分支因未实装而无测试(见缺口 1)。

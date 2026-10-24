@@ -1,0 +1,78 @@
+# 代码审计报告 — 阶段体检(backend/src + frontend/src + db)
+
+- 审计时间:2026-10-24
+- 审计人:ssda-tester(审计与开发分离,本报告不含任何代码修改)
+- 审计范围:backend/src(路由/控制器/DAO/AI 组件/中间件/配置)、frontend/src(视图/组件/api/stores/router)、db/schema.sql、db/seed.sql、.gitignore、git 索引(只读)
+- 审计依据:.zcode/skills/ssda-code-audit/SKILL.md 清单 3.1~3.8
+- **结论:不通过(阻塞项 0,P0=0,P1=1,P2=4,P3=6)。P1 为 JWT_SECRET 代码内默认值,当前部署已实测不受影响,但须在阶段内修复。**
+
+## 一、发现列表
+
+| 编号 | 级别 | 位置 | 问题 | 证据 | 修复建议 | 状态 |
+|---|---|---|---|---|---|---|
+| A-01 | **P1** | backend/src/config/env.ts:14 | JWT_SECRET 存在硬编码默认值 `ssda-dev-secret-change-me-please`,新环境漏配时将以公开可知的密钥签发/校验管理员 token(可伪造 admin 身份) | `JWT_SECRET: z.string().min(16).default('ssda-dev-secret-change-me-please')`。**实测佐证(当前风险已缓解)**:用该默认密钥伪造 `{id:1,role:'admin'}` token 调用线上 GET /api/admin/knowledge → 401 "凭证无效或已过期",说明运行实例 .env 已覆盖真实密钥 | 去掉 `.default(...)`,改为必填(min(16) 保留),缺失时启动即失败;或生产环境启动时校验 env.JWT_SECRET ≠ 默认值 | 待修复 |
+| A-02 | P2 | backend/src/app.ts:9 | CORS 全开放:`app.use(cors())` 无 origin 白名单,任意站点可携带凭据跨域调用管理接口 | `app.use(cors());`(无配置项) | 按清单收敛:白名单 `http://localhost:5173`,按需开放 credentials | 待修复 |
+| A-03 | P2 | db/seed.sql:7,15-18 | 管理员弱口令 `admin/admin123` 且明文写在 seed 注释;README 无"首次登录请修改默认密码"提示(grep README 无相关内容) | `-- ★ 唯一管理员明文凭据(仅此一次注明):admin / admin123` | README 增加默认账号风险提示;或提供首登强制改密/改密接口(需总控裁决是否属本期范围) | 待修复 |
+| A-04 | P2 | backend/src/ai/chat-service.ts:103-111 | assistant 消息落库 `await insertMessage(...)` 无兜底:落库失败将使整个请求 500,违背 02-ai-component-design 6.3 "落库失败不阻塞响应,记 error 日志"(对话可用性优先) | 代码:answer 已生成、mode 已定,但 insertMessage 在 `return` 前被 await,无 try/catch | 包 try/catch:落库失败记 error 日志后仍返回回答(与设计 6.3 对齐);user 消息落库失败可维持现状(设计允许) | 待修复 |
+| A-05 | P2 | backend/src/ai/retriever/local-kb-retriever.ts:84-106(尤其 :91) | 检索分词对 2~8 字分段不再切分:恰为 8 字的自然问句整体无命中 → 误拒答。实测:"校园跑有什么要求?"(8 字)→ "知识库未覆盖该问题" 且 sources=[];而知识库存在"校园跑打卡规则说明"(id=44),同义长问句可命中。拒答行为本身契约合规(不编造),属检索质量缺陷,直接影响 FR-13 可用性 | tokenize():`if (seg.length >= 2 && seg.length <= 8 && !STOPWORDS.has(seg)) terms.push(seg)` → 8 字整句作单一 LIKE 词 | 对 2~8 字分段追加 2-gram 兜底或引入jieba 级分词;同时在 2-gram 之上保留整句优先匹配。修复后用 ai-chat-quality-report.md 用例集回归 | 待修复 |
+| A-06 | P3 | backend/src/controllers/course.controller.ts:190-193;backend/src/routes/admin.routes.ts:88-91 | 删除任教关系路由未用 validate 中间件,控制器内 z.parse 且 `id` 字段缺中文 message → 非法参数返回英文 zod 原文 | 实测:`DELETE /api/admin/courses/1/teachers/abc` → `{"code":"VALIDATION_ERROR","message":"Invalid input: expected number, received NaN"}`;契约 1.1 要求 message 为可展示中文 | 补 `validate(idParamSchema,'params')` 中间件或给 id 加中文 message,与全库风格统一 | 待修复 |
+| A-07 | P3 | backend/src/routes/public.routes.ts:41 | GET /api/locations/:id 为契约外端点(契约 2.9 无地点详情),前端未调用 | 见 api-alignment-report.md 2.3 | 补登记或下线 | 待总控裁决 |
+| A-08 | P3 | backend/src/routes/admin.routes.ts:53,60,73,80 | admin 四资源详情 GET(services/activities/courses/teachers /:id)契约未明示(3.13~3.17 未列出),前端在用 | 同上 | 契约补充登记 | 待总控裁决 |
+| A-09 | P3 | backend/src/controllers/knowledge.controller.ts(list) | 学生端知识列表多返回 `status`、`createdAt` 字段(契约 2.3 未列;无敏感信息,前端未使用) | 实测响应:`{"id":45,...,"status":"published",...,"createdAt":...}` | 契约补字段说明或裁剪响应 | 待总控裁决 |
+| A-10 | P3 | frontend/src/api/admin.ts | `toCategoryPayload` 孤儿导出(全视图 0 引用) | 对齐脚本扫描结果 | 删除或标注保留理由 | 待修复 |
+| A-11 | P3 | frontend/dist 构建输出 | 主 chunk 1,094.78 kB > 500 kB(vite 警告) | `dist/assets/index-_Tvq9Mdo.js 1,094.78 kB │ gzip: 362.51 kB` | 配置 build.rollupOptions.output.manualChunks(element-plus 等拆包) | 待修复 |
+| A-12 | P3 | backend/src/ai/retriever/index.ts:11-14 | KB_API_BASE_URL 配置后分支为空占位(仍用本地检索器),与 02 设计 2.2 的 HttpKbRetriever 预留不一致(注释已声明 Phase 3 实装) | `if (env.KB_API_BASE_URL) { /* Phase 3 预留位 */ }` | Phase 3 实装;当前阶段登记备查即可 | 备查 |
+
+## 二、清单勾选结果(逐项)
+
+### 3.1 SQL 注入(P0 红线)— **通过**
+- [x] 全库 grep `${` 与 query( 交集:所有模板字符串插值仅为内部常量(`COLS` 列清单、内部构造的 `whereSql`、检索器 TABLES 硬编码表名/列名),**用户输入一律走 `?` 占位符**。
+- [x] 模糊查询全部 `LIKE CONCAT('%', ?, '%')`(knowledge.dao:32,67;service.dao:29;activity.dao:25;course.dao:30;teacher.dao:21;location.dao:25;local-kb-retriever:142)。
+- [x] ORDER BY 全部硬编码列名(knowledge updated_at/services & admin services updated_at/activities start_time/teachers name/locations campus,name/courses name/ai-logs created_at);LIMIT ? OFFSET ? 参数化(knowledge.dao:75 状态多值用 `IN (${q.status.map(()=>'?')})` 生成占位符,值仍参数化)。
+- [x] 检索器表名/列名来自模块内 TABLES 配置,非请求参数。
+
+### 3.2 越权(P0/P1)— **通过**
+- [x] admin.routes.ts:29-31 统一 `guarded.use(requireAdmin)` 后再注册全部管理路由(login 除外),结构上不存在漏挂;抽测 admin knowledge/categories/services/activities/locations/courses/teachers/relations/ai-logs 均在 guarded 之下。
+- [x] 401/403 语义正确(middlewares/auth.ts:22 无凭证 401,:27-28 role!=='admin' → 403,:34 token 无效 401);实测伪造 admin token → 401。
+- [x] 管理资源为全局管理型(无"归属某个用户"的行级归属需求);知识状态机变更由服务层校验(见 3.x 抽查 knowledge.service 状态机,409 逻辑实测符合)。
+- [x] 前端 routerGuard.spec.ts(5 用例通过)+ 后端强制校验双保险,不存在"仅靠前端隐藏入口"的接口。
+
+### 3.3 密码(P0 红线)— **通过(1 项 P2 提示)**
+- [x] bcryptjs 哈希存储与校验(services/auth.service.ts:13 bcrypt.compareSync;seed 为 $2b$10$ 哈希),无明文/MD5/SHA1。
+- [x] 登录响应仅 `{token, admin:{id,username,role}}`,实测 A-04 无 password/password_hash 字段;DAO 仅登录查询取 password_hash,不外传。
+- [x] 401 话术统一"用户名或密码错误",不区分账号存在性(auth.service.ts:14-15)。
+- [ ] seed 默认口令 admin/admin123 + README 无改密提示 → A-03(P2)。
+
+### 3.4 信息泄露(P0/P1)— **通过(1 项 P3)**
+- [x] 500 统一"系统繁忙,请稍后重试"(middlewares/error.ts:34-37),堆栈仅 console.error 进服务端日志。
+- [x] 实测全部 4xx/5xx 响应无 stack/SQL/连接串/host/端口;404 message 为业务话术("知识不存在或未发布"等)。
+- [ ] A-06:一处 400 泄露 zod 英文原文(非敏感内部细节,但违反 1.1 中文话术约定,P3)。
+
+### 3.5 敏感配置(P0 红线)— **部分通过**
+- [x] .gitignore 覆盖 `.env`、`.env.*`(`!.env.example` 保留);只读 `git ls-files | grep -iE '\.env|secret|pem|key'` 仅命中 backend/.env.example,**.env 未被 git 跟踪**。
+- [x] DEEPSEEK_API_KEY/DB 密码出自 env;日志无 token 全文/Key 打印(morgan 仅 URL,console.error 为异常对象)。
+- [ ] A-01:JWT_SECRET 有代码内默认值(P1,唯一阻塞项)。
+
+### 3.6 XSS(P1)— **通过**
+- [x] 全前端 grep 无 v-html / innerHTML / domProps / document.write / eval / new Function;知识详情页注释明确"禁 v-html"(KnowledgeDetailView.vue:8)。
+- [x] AI 回答、知识正文、搜索词均走文本插值(`{{ m.content }}` + white-space: pre-wrap,AiChatView.vue:112-116)。
+- [x] 无动态 :href 与 javascript: 协议;AI 来源用 router-link 内部路由(AiChatView.vue:130-135)。
+
+### 3.7 AI 提示词注入(P1)— **通过**
+- [x] 用户输入仅作为 user message 透传(chat-service.ts:87 `llm.chatCompletion(buildSystemPrompt(result.items), message)`),system prompt 仅固定约束 + 检索资料(chat-service.ts:20-40),不含用户历史/输入。
+- [x] 回答基于检索结果并附来源;检索不到 → 固定核实话术 + sources=[](chat-service.ts:79-82,实测 AI-03~05),不编造。
+- [x] LLM 异常/未配 Key → LlmError 捕获走降级模板,mode=fallback 如实标注(chat-service.ts:90-98,实测);超时 20s 由 env.LLM_TIMEOUT_MS 承载。
+- [x] 仅匿名 sessionId(localStorage uuid),无账号/设备关联(ai-log.dao findOrCreateSession 仅 session_key);实测含姓名学号提问回答不复述 PII。
+- [x] 隐私红线:导出 JSONL 不入 git(.gitignore docs/ai-logs/exports/)。
+
+### 3.8 其他 — **通过(2 项 P2/P3)**
+- [x] 列表接口全部分页:公开 6 资源 + admin 全资源 + ai-logs + change-logs 均带 page/pageSize/total;唯一全量例外 categories(契约 1.2 已登记)。
+- [x] 错误日志无敏感字段(errorHandler 仅记录错误对象)。
+- [x] zod 校验覆盖全部写接口(body/query/params),strict 拒绝多余字段(实测 phone → 400)。
+- [x] 索引齐备(db/schema.sql):knowledge(title、content(100)、(category_id,status)、(status,effective_until)、updated_at)、location(campus,name)、service(is_enabled,updated_at)、change_log(knowledge_id,created_at)等,支撑 2 秒口径。
+- [ ] A-02:CORS 未收敛(P2)。
+- [x] express.json limit 1mb;静态资源与上传不存在。
+
+## 三、复审记录
+
+(暂无 — 修复由总控分派后追加;A-01/A-04/A-06 修复后须复审并重跑 backend npm test + AI 冒烟用例集。)

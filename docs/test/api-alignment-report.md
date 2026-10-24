@@ -1,0 +1,105 @@
+# 三方接口对齐报告 — frontend/src/api ↔ api-contract.md ↔ backend/src/routes
+
+- 核对时间:2026-10-24
+- 核对人:ssda-tester
+- 方法:逐个函数核对 frontend/src/api/*.ts 导出函数(共 60 个,含 http.ts)的调用路径+方法 → docs/design/api-contract.md 端点 → backend/src/routes/*.ts 实际注册路由;另以脚本扫描全部 .vue 视图的模板事件绑定与 api 导入,检查"按钮调用了不存在的 api 函数"与"后端契约外私加端点"。
+
+## 一、总体结论
+
+- **无"前端有按钮/调用、后端没实现"的接口**:前端 60 个导出中 59 个为接口封装,全部与后端已注册路由一一对应(方法、路径、参数一致);1 个(toCategoryPayload)为本地纯函数,无孤儿调用。视图模板中所有事件处理器均在对应 `<script setup>` 内定义或导入,未发现调用不存在函数的绑定。
+- **后端无越权私加端点**:对照契约逐条核对,后端仅多出 1 个契约外端点(GET /api/locations/:id,前端未调用)与 4 个"契约未明示但属 CRUD 合理延伸"的管理端详情 GET(前端在用),无其他私加。
+- 前端多出:无。参数不一致:无(状态多值 status、isVerified、days/state、export、sessionKey/startDate/endDate 等参数均与契约一致,且经 3000 端口实测验证)。
+
+## 二、对齐明细表
+
+判定:✅ 一致 | ⚠️ 契约未明示/备注 | ❌ 不一致(无)
+
+### 2.1 公开接口(学生端)
+
+| 前端调用函数 | 调用路径+方法 | 契约端点 | 后端路由(public.routes.ts) | 判定 |
+|---|---|---|---|---|
+| getKnowledgeList | GET /knowledge | 2.3 GET /api/knowledge | GET /knowledge(validate knowledgeQuerySchema) | ✅ |
+| getKnowledgeDetail | GET /knowledge/:id | 2.4 | GET /knowledge/:id | ✅ |
+| searchAll | GET /search | 2.14 | GET /search(控制器内 zod 校验) | ✅ |
+| getCategories | GET /categories | 2.2 | GET /categories | ✅ |
+| getServices | GET /services | 2.5 | GET /services | ✅ |
+| getServiceDetail | GET /services/:id | 2.6 | GET /services/:id | ✅ |
+| getActivities | GET /activities | 2.7 | GET /activities | ✅ |
+| getActivityDetail | GET /activities/:id | 2.8 | GET /activities/:id | ✅ |
+| getLocations | GET /locations | 2.9 | GET /locations | ✅ |
+| getCourses | GET /courses | 2.10 | GET /courses | ✅ |
+| getCourseDetail | GET /courses/:id | 2.11 | GET /courses/:id | ✅ |
+| getTeachers | GET /teachers | 2.12 | GET /teachers | ✅ |
+| getTeacherDetail | GET /teachers/:id | 2.13 | GET /teachers/:id | ✅ |
+| aiChat | POST /ai/chat | 2.15 | ai.routes.ts POST /chat | ✅ |
+| ensureAiSessionId | (本地函数,localStorage) | 4.3 | —(前端职责) | ✅ |
+
+### 2.2 管理接口(admin.ts,JWT)
+
+| 前端调用函数 | 调用路径+方法 | 契约端点 | 后端路由(admin.routes.ts) | 判定 |
+|---|---|---|---|---|
+| adminLogin | POST /admin/auth/login | 3.1 | POST /auth/login | ✅ |
+| getAdminKnowledge | GET /admin/knowledge | 3.2 | GET /knowledge | ✅ |
+| getAdminKnowledgeDetail | GET /admin/knowledge/:id | 3.3 | GET /knowledge/:id | ✅ |
+| createKnowledge | POST /admin/knowledge | 3.4 | POST /knowledge | ✅ |
+| updateKnowledge | PUT /admin/knowledge/:id | 3.5 | PUT /knowledge/:id | ✅ |
+| deleteKnowledge | DELETE /admin/knowledge/:id | 3.6 | DELETE /knowledge/:id | ✅ |
+| submitReview | POST /admin/knowledge/:id/submit-review | 3.7 | POST 同名 | ✅ |
+| reviewKnowledge | POST /admin/knowledge/:id/review | 3.8 | POST 同名 | ✅ |
+| takedownKnowledge | POST /admin/knowledge/:id/takedown | 3.9 | POST 同名 | ✅ |
+| getExpiredKnowledge | GET /admin/knowledge/expired | 3.10 | GET /knowledge/expired(注册先于 /:id) | ✅ |
+| getKnowledgeChangeLogs | GET /admin/knowledge/:id/change-logs | 3.11 | GET 同名 | ✅ |
+| getAdminCategories | GET /admin/categories | 3.12 | GET /categories | ✅ |
+| createCategory | POST /admin/categories | 3.12 | POST /categories | ✅ |
+| updateCategory | PUT /admin/categories/:id | 3.12 | PUT /categories/:id | ✅ |
+| deleteCategory | DELETE /admin/categories/:id | 3.12 | DELETE /categories/:id | ✅ |
+| getAdminServices | GET /admin/services | 3.13 | GET /services | ✅ |
+| getAdminServiceDetail | GET /admin/services/:id | (3.13 未明示 :id 详情) | GET /services/:id | ⚠️ 契约未明示,前后端一致 |
+| createService | POST /admin/services | 3.13 | POST /services | ✅ |
+| updateService | PUT /admin/services/:id | 3.13 | PUT /services/:id | ✅ |
+| deleteService | DELETE /admin/services/:id | 3.13 | DELETE /services/:id | ✅ |
+| getAdminActivities | GET /admin/activities | 3.14 | GET /activities | ✅ |
+| getAdminActivityDetail | GET /admin/activities/:id | (3.14"详情同 3.13 模式"隐含) | GET /activities/:id | ⚠️ 同上 |
+| createActivity | POST /admin/activities | 3.14 | POST /activities | ✅ |
+| updateActivity | PUT /admin/activities/:id | 3.14 | PUT /activities/:id | ✅ |
+| deleteActivity | DELETE /admin/activities/:id | 3.14 | DELETE /activities/:id | ✅ |
+| getAdminLocations | GET /admin/locations | 3.15 | GET /locations | ✅ |
+| createLocation | POST /admin/locations | 3.15 | POST /locations | ✅ |
+| updateLocation | PUT /admin/locations/:id | 3.15 | PUT /locations/:id | ✅ |
+| deleteLocation | DELETE /admin/locations/:id | 3.15 | DELETE /locations/:id | ✅ |
+| getAdminCourses | GET /admin/courses | 3.16 | GET /courses | ✅ |
+| createCourse | POST /admin/courses | 3.16 | POST /courses | ✅ |
+| updateCourse | PUT /admin/courses/:id | 3.16 | PUT /courses/:id | ✅ |
+| deleteCourse | DELETE /admin/courses/:id | 3.16 | DELETE /courses/:id | ✅ |
+| getAdminTeachers | GET /admin/teachers | 3.17 | GET /teachers | ✅ |
+| createTeacher | POST /admin/teachers | 3.17(zod strict) | POST /teachers | ✅(实测多余字段 phone 400) |
+| updateTeacher | PUT /admin/teachers/:id | 3.17 | PUT /teachers/:id | ✅ |
+| deleteTeacher | DELETE /admin/teachers/:id | 3.17 | DELETE /teachers/:id | ✅ |
+| getCourseTeacherRelations | GET /admin/courses/:id/teachers | 3.18 | GET 同名 | ✅ |
+| addCourseTeacher | POST /admin/courses/:id/teachers | 3.18 | POST 同名 | ✅ |
+| removeCourseTeacher | DELETE /admin/courses/:id/teachers/:relationId | 3.18 | DELETE 同名 | ⚠️ 功能一致;非法参数报错文案为英文 zod 原文(见功能测试报告异常 1) |
+| getAdminAiLogs | GET /admin/ai-logs | 3.19 | GET /ai-logs | ✅ |
+| exportAiLogs | GET /admin/ai-logs?export=1(blob 下载) | 3.19 导出分支 | GET /ai-logs(export=1 返回 JSONL 流) | ✅(前端用带 Authorization 的 blob 下载,契约未规定下载载体,合理,代码内已注释说明) |
+
+### 2.3 后端路由 → 前端/契约反向核对(找"后端多出")
+
+| 后端实际注册的路由 | 契约 | 前端调用 | 判定 |
+|---|---|---|---|
+| GET /api/locations/:id(public.routes.ts:41) | **契约无此端点** | **无**(frontend/src/api/locations.ts 仅 getLocations) | ⚠️ 契约外端点:学生端地点详情,实现完好(404 语义正确)但属"未登记先实现",建议按登记流程补契约或移除 |
+| GET /api/admin/services/:id | 3.13 未明示 | getAdminServiceDetail 在用 | ⚠️ 建议补登记(编辑回显需要,合理) |
+| GET /api/admin/activities/:id | 3.14 隐含 | getAdminActivityDetail 在用 | ⚠️ 同上 |
+| GET /api/admin/courses/:id | 3.16 未明示 | (courses 管理列表内联使用) | ⚠️ 同上 |
+| GET /api/admin/teachers/:id | 3.17 未明示 | (教师管理列表内联使用) | ⚠️ 同上 |
+| 其余 44 条路由 | 与契约逐条一致 | 均有前端函数对应 | ✅ |
+
+### 2.4 页面级检查(用户特别关注项)
+
+- 脚本扫描 frontend/src/views + components 全部 28 个 .vue:模板事件绑定(@click/@change/@submit/@close/@confirm 等)涉及的每个处理器都能在对应 `<script setup>` 中找到定义或导入 —— **未发现"按钮绑定了不存在的 api 函数"**。
+- 视图从 `@/api/*` 导入的 59 个接口函数全部在对应 api 模块中有导出;api 模块导出中仅 `toCategoryPayload`(admin.ts)无视图引用(本地工具函数,孤儿导出,P3)。
+- http.ts 的 `TOKEN_KEY` 被 stores/auth.ts 引用(正常,非缺失)。
+
+## 三、需总控决策事项
+
+1. GET /api/locations/:id:补登记进契约(走 0.1 补充端点流程)或下线该路由,二选一。
+2. admin 四资源详情 GET:建议在契约 3.13~3.17 中明确列出"GET /:id 详情(编辑回显)",消除灰区。
+3. 契约 2.3 学生端知识列表实际多返回 `status`、`createdAt` 字段(契约未列,前端未使用,无泄露风险):建议契约补充字段说明或后端裁剪,记 P3。

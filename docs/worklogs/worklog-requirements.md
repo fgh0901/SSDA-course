@@ -110,3 +110,62 @@
 5. **ssda-frontend skill 页面清单修订**:路由 `/services/:id`、`/activities/:id` 需要 `ServiceDetailView`、`ActivityDetailView`,当前 skill 的 views 清单未列,请授权技能工程师补录。
 6. **分页例外确认**:`GET /api/categories` 全量返回(导航字典)是契约登记的唯一分页例外,请总控冻结时确认。
 7. 契约 v1.0 状态为"待总控评审冻结",评审通过后请由总控统一宣布冻结并同步全体 Agent。
+
+---
+
+## 任务 2:需求符合性审查(总控指令)
+
+- **日期**:2026-10-24
+
+### 目标
+
+回答两个问题:①开发内容是否符合需求(已实现功能是否完整覆盖需求书与契约,有无漏做、做偏、超范围);②开发内容是否规范(实现方式是否与设计文档/契约/skills 声明的规则一致)。
+
+### 范围
+
+- 基线:`docs/design/00-project-brief.md`(FR-01~13/M01~M10/P01~P05/TC-01~10)、`api-contract.md`(冻结 v1.0)、`01-system-design.md`、`03-page-spec.md`;原始需求书(需求分析说明书2.0.docx)仅参考。
+- 实现:`backend/src/`(routes/controllers/services/dao/ai)、`frontend/src/`(api/views/router/stores)、`db/schema.sql`、`db/seed.sql`、双端 tests。
+- 方法:①以契约追溯矩阵为索引,逐 FR 核对"接口实现+页面实现+测试覆盖"三点齐备;②逐 M01~M10 核对关键功能点(如 M09 审核流状态机、M10 有效期四态展示);③核对 P01~P05 流程异常分支落点;④抽查 ≥6 个接口请求/响应字段一致性;⑤检查超范围实现(收藏/学生账号等本期不做项)。
+
+### 允许改动的文件(仅限以下 2 个)
+
+1. `docs/test/requirements-conformance-report.md`(新建,审查报告)
+2. `docs/worklogs/worklog-requirements.md`(本文件,追加任务书与完成节点)
+
+### 禁止事项
+
+- 全程只读实现代码,禁止改任何代码/契约/skills/其他文档
+- 证据必须具体到文件与行号;不确定的标注"待人工确认"而非猜测
+
+### 预期产出
+
+- `docs/test/requirements-conformance-report.md`:结论 + FR 逐条核对表 + M01~M10 核对表 + P01~P05 异常分支核对表 + 缺口清单(按严重程度排序)+ 超范围实现清单
+- 本 worklog 追加完成节点与完成报告
+
+---
+
+## 节点记录(任务 2)
+
+### 节点 1:任务书已写,完成审查(2026-10-24)
+
+- 审查方法:以契约第 5 节追溯矩阵为索引,逐 FR 核对"接口+页面+测试"三点;逐 M/P 核对关键功能点与异常分支;抽查 8 个接口字段一致性(超过派单要求的 6 个);全仓 grep 检查超范围实现;核对 schema/seed 与 ER 图、状态机与契约 3.4~3.9、AI 链路与 02 设计。
+- 全程只读:未改任何代码/契约/skills/其他文档;证据标注到文件:行号。
+- 产出:`docs/test/requirements-conformance-report.md`(新建;docs/test 目录为本次审查按派单授权创建)。
+
+## 完成报告(任务 2:需求符合性审查,2026-10-24)
+
+### 结果
+
+- **结论:基本符合。** FR-01~12 与 M01~M10、P01~P05 接口/页面/测试三点齐备,实现与契约 v1.0 一致性良好,无本期不做项被实现;规范性(分层/参数化 SQL/鉴权/响应包/禁 v-html/四态展示)核对通过。
+- **最大缺口(P1)**:FR-13 的 LLM 生成未实装——`DeepSeekAdapter.chatCompletion` 为占位 stub(deepseek-adapter.ts:26-32),`mode=deepseek` 不可达,当前 AI 回答全部走 fallback 模板;降级/拒答/落库/审计链路本身完整合规。代码自述"Phase 3 接入",是否豁免待总控。
+- 次要缺口:5 个端点未按流程补登记(公开 locations/:id 为超范围端点;管理端 services/activities/courses/teachers 的 :id 详情前端在用);TC-11+ 编号未登记(自动化用例实际已存在);expiring 组 daysRemaining 字段未登记;4 处内联 zod 校验与统一 validate 中间件风格不一致。
+- 待人工确认:独立追溯矩阵文件落位;dev-usage-log 阶段记录完整性;seed 管理员口令仅限演示提示。
+
+### 产出物
+
+- `docs/test/requirements-conformance-report.md`(结论/FR 表/M 表/P 表/缺口清单 6 条/超范围清单/字段抽查 8 项/规范性核对/测试覆盖汇总)
+
+### 未完成及原因
+
+- 原始需求书(需求分析说明书2.0.docx)未逐条解析:以简报为唯一事实来源(与任务 1 口径一致),如总控要求逐条对照 docx 再补做。
+- 未运行任何测试/npm 命令:派单为只读文档审查,测试执行结论引用测试代码静态证据(用例存在性与断言内容),实际运行结果由测试 Agent 回归确认。
