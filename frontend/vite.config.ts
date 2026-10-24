@@ -22,5 +22,15 @@ export default defineConfig({
   test: {
     environment: 'jsdom',
     setupFiles: './src/__tests__/setup.ts'
+  },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          'element-plus': ['element-plus'],
+          vendor: ['vue', 'vue-router', 'pinia', 'axios']
+        }
+      }
+    }
   }
 });
