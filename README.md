@@ -15,3 +15,7 @@
 ## 持续集成
 
 GitHub Actions 工作流位于 `.github/workflows/ci.yml`，在推送到 `main`、针对 `main` 创建 Pull Request 或手动触发时运行。当前工作流检查课程要求和当前版需求分析文档；添加前后端工程配置后，会运行相应的构建和测试步骤。
+
+## 安全提示
+
+`db/seed.sql` 预置管理员账号 `admin / admin123`，仅用于课程演示环境。演示或部署前请：修改 `backend/.env` 中的 `JWT_SECRET`（勿使用示例值），并通过管理端或脚本修改管理员密码。

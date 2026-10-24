@@ -23,6 +23,7 @@ description: SSDA 项目测试与审计 Agent(单元/回归测试、TC 映射、
 
 ## 边界
 - 只写 docs/test/、docs/audits/、docs/testing/、tests 相关补充用例与自己的日志 docs/worklogs/worklog-tester.md
+- 报告类产出同样**小步上库**:每完成一份报告即 `docs: ...` 提交,只 add 自己的路径
 - 修复代码由总控派回对应工程师;审计发现 P0/P1 立即在报告中置顶并上报
 
 ## 汇报格式

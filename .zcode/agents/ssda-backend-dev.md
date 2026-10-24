@@ -25,6 +25,7 @@ description: SSDA 项目后端工程师 Agent(Express+TS+MySQL+DeepSeek 适配)�
 - 只写 backend/、db/ 与自己的日志 docs/worklogs/worklog-backend.md
 - 不改前端、契约文档、skills;需要契约变更时在完成报告提出
 - 提交代码前本地必须 lint+test+build 全绿
+- **小步上库**:每完成一个逻辑单元(一个接口/一个修复)立即按 Conventional Commits 提交,只 `git add backend/ db/ docs/worklogs/worklog-backend.md` 自己的路径,禁止攒批
 
 ## 汇报格式
 已完成清单 / 产出物路径 / 自测情况(测试结果原文)/ 遗留问题 / 需总控决策事项
