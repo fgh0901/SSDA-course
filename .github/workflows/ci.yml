@@ -7,12 +7,17 @@ on:
     branches: [main]
   workflow_dispatch:
 
+# 同分支/同 PR 的新运行会取消仍在跑的旧运行,节约 runner 时间
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 permissions:
   contents: read
 
 jobs:
-  checks:
-    name: Repository and application checks
+  course-materials:
+    name: Course materials check
     runs-on: ubuntu-latest
     steps:
       - name: Check out repository
@@ -30,43 +35,114 @@ jobs:
             Write-Error "Missing required course materials: $($missing -join ', ')"
           }
 
-      - name: Set up Node.js
-        if: ${{ hashFiles('frontend/package-lock.json', 'backend/package-lock.json') != '' }}
+  frontend:
+    name: Frontend (Vue 3 + Vite)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js 22
         uses: actions/setup-node@v4
         with:
           node-version: 22
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
 
-      - name: Install and check frontend
-        if: ${{ hashFiles('frontend/package-lock.json') != '' }}
+      - name: Install dependencies
         working-directory: frontend
-        run: |
-          npm ci
-          npm run lint --if-present
-          npm test --if-present
-          npm run build --if-present
+        run: npm ci
 
-      - name: Install and check Node.js backend
-        if: ${{ hashFiles('backend/package-lock.json') != '' }}
-        working-directory: backend
-        run: |
-          npm ci
-          npm run lint --if-present
-          npm test --if-present
-          npm run build --if-present
+      - name: Lint
+        working-directory: frontend
+        run: npm run lint
 
-      - name: Set up Java
-        if: ${{ hashFiles('backend/pom.xml') != '' }}
-        uses: actions/setup-java@v4
+      - name: Test (Vitest)
+        working-directory: frontend
+        run: npm test
+
+      - name: Build (vue-tsc + vite)
+        working-directory: frontend
+        run: npm run build
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
         with:
-          distribution: temurin
-          java-version: '21'
-          cache: maven
+          name: frontend-dist
+          path: frontend/dist/
+          retention-days: 7
+          if-no-files-found: error
 
-      - name: Verify Maven backend
-        if: ${{ hashFiles('backend/pom.xml') != '' }}
-        run: mvn --batch-mode --file backend/pom.xml verify
+  backend:
+    name: Backend (Express + Jest + MySQL 8)
+    runs-on: ubuntu-latest
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: ssda_test
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -uroot -proot"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=10
+          --health-start-period=30s
+    # 与 backend/src/config/env.ts(zod 校验)及 tests/global-setup.js 的连接配置逐字对齐:
+    # JWT_SECRET 必填且 ≥16 字符;DB_PASSWORD 必须与 service 的 MYSQL_ROOT_PASSWORD 一致;
+    # DB_NAME=ssda_test(globalSetup 向该库执行 db/schema.sql)。
+    env:
+      NODE_ENV: test
+      DB_HOST: 127.0.0.1
+      DB_PORT: '3306'
+      DB_USER: root
+      DB_PASSWORD: root
+      DB_NAME: ssda_test
+      JWT_SECRET: ci-only-test-secret-0123456789
+      CORS_ORIGIN: http://localhost:5173
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
 
-      - name: Report pending application checks
-        if: ${{ hashFiles('frontend/package-lock.json', 'backend/package-lock.json', 'backend/pom.xml') == '' }}
-        run: echo "No frontend or backend manifest is present yet; application checks will run when one is added."
+      - name: Set up Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: backend/package-lock.json
 
+      - name: Wait for MySQL readiness
+        run: |
+          for i in $(seq 1 30); do
+            if mysqladmin ping -h 127.0.0.1 -uroot -proot --silent; then
+              echo "MySQL is ready"
+              exit 0
+            fi
+            echo "Waiting for MySQL ($i/30)..."
+            sleep 2
+          done
+          echo "MySQL did not become ready in time" >&2
+          exit 1
+
+      - name: Ensure ssda_test database (utf8mb4)
+        run: >-
+          mysql -h 127.0.0.1 -uroot -proot
+          -e "CREATE DATABASE IF NOT EXISTS ssda_test DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci;"
+
+      - name: Install dependencies
+        working-directory: backend
+        run: npm ci
+
+      - name: Lint
+        working-directory: backend
+        run: npm run lint
+
+      - name: Test (Jest + Supertest, globalSetup rebuilds ssda_test schema)
+        working-directory: backend
+        run: npm test
+
+      - name: Build (tsc)
+        working-directory: backend
+        run: npm run build
