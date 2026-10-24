@@ -43,6 +43,12 @@ const router = createRouter({
         { path: 'expired', name: 'admin-expired', component: () => import('@/views/admin/ExpiredWorkbenchView.vue') },
         { path: 'ai-logs', name: 'admin-ai-logs', component: () => import('@/views/admin/AiLogView.vue') }
       ]
+    },
+    // ---- 兜底:未匹配地址显示 404,避免空白页 ----
+    {
+      path: '/:pathMatch(.*)*',
+      name: 'not-found',
+      component: () => import('@/views/NotFoundView.vue')
     }
   ]
 });
