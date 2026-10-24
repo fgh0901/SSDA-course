@@ -35,6 +35,12 @@ venv/
 Thumbs.db
 Desktop.ini
 
+# Office lock files
+~$*
+
+# ZCode session artifacts (skills under .zcode/skills/ ARE committed)
+.zcode/plans/
+
 # Temporary files
 *.tmp
 *.temp
