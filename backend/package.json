@@ -9,7 +9,8 @@
     "start": "node dist/index.js",
     "build": "tsc -p tsconfig.json",
     "lint": "eslint .",
-    "test": "jest --runInBand"
+    "test": "jest --runInBand",
+    "export:ai-logs": "tsx src/scripts/export-ai-logs.ts"
   },
   "dependencies": {
     "bcryptjs": "^3.0.2",
