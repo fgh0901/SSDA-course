@@ -1,6 +1,8 @@
 import request from 'supertest';
 import { createApp } from '../src/app';
 import { execute, query } from '../src/config/db';
+import * as aiLogDao from '../src/dao/ai-log.dao';
+import { analyzeQuery } from '../src/ai/retriever/local-kb-retriever';
 import {
   cleanupByMark,
   createAdmin,
@@ -20,7 +22,9 @@ let catId: number;
 const SESSION_ID = 'a1111111-2222-4333-8444-555555555555';
 const SESSION_EMPTY = 'b2222222-3333-4777-8888-999999999999';
 const SESSION_SECRET = 'c3333333-4444-4aaa-8bbb-cccccccccccc';
-const AI_SESSION_KEYS = [SESSION_ID, SESSION_EMPTY, SESSION_SECRET];
+const SESSION_SHORT = 'd4444444-5555-4666-8777-888888888888';
+const SESSION_DBFAIL = 'e5555555-6666-4777-8888-aaaaaaaaaaaa';
+const AI_SESSION_KEYS = [SESSION_ID, SESSION_EMPTY, SESSION_SECRET, SESSION_SHORT, SESSION_DBFAIL];
 
 beforeAll(async () => {
   await cleanupByMark();
@@ -184,14 +188,100 @@ describe('管理端 AI 日志(GET /api/admin/ai-logs,契约 3.19)', () => {
 
   it('日期过滤:startDate 400 校验与正常过滤', async () => {
     const bad = await request(app)
-      .get('/api/admin/ai-logs?startDate=2026/01/01')
+      .get(`/api/admin/ai-logs?startDate=2026/01/01`)
       .set('Authorization', `Bearer ${token}`);
     expect(bad.status).toBe(400);
 
     const ok = await request(app)
-      .get('/api/admin/ai-logs?startDate=2099-01-01')
+      .get(`/api/admin/ai-logs?startDate=2099-01-01`)
       .set('Authorization', `Bearer ${token}`);
     expect(ok.status).toBe(200);
     expect(ok.body.data.total).toBe(0);
+  });
+});
+
+describe('AI 检索短句与排序(体检修复 F2/审计 A-05)', () => {
+  beforeAll(async () => {
+    await insertKnowledge({
+      categoryId: catId,
+      title: `${MARK}校园跑打卡规则说明`,
+      content: '本学期校园跑有效次数 60 次,请在体育课堂完成打卡,未达标者扣平时成绩。',
+      status: 'published',
+      isVerified: 1,
+      effectiveFrom: dateOffset(-10),
+      effectiveUntil: dateOffset(300)
+    });
+  });
+
+  it('tokenize:2~8 字分段整句保留为优先词,并追加 2-gram 兜底', () => {
+    const { terms, strongTerms } = analyzeQuery('校园跑有什么要求?');
+    expect(strongTerms).toContain('校园跑有什么要求');
+    expect(terms[0]).toBe('校园跑有什么要求');
+    expect(terms).toContain('校园');
+    expect(terms).toContain('要求');
+  });
+
+  it('8 字短问句:整句+2-gram 双路召回命中来源,不再误拒答', async () => {
+    const res = await request(app)
+      .post('/api/ai/chat')
+      .send({ sessionId: SESSION_SHORT, message: '校园跑有什么要求?' });
+    expect(res.status).toBe(200);
+    const d = res.body.data;
+    expect(d.sources.length).toBeGreaterThanOrEqual(1);
+    expect(d.answer).not.toContain('知识库未覆盖');
+    expect(d.answer).toContain('降级模式');
+    expect(d.sources[0].title).toContain('校园跑');
+  });
+
+  it('校园卡问句 top1 应为校园卡条目(查询词覆盖率去噪,不再被校园跑抢占)', async () => {
+    const res = await request(app)
+      .post('/api/ai/chat')
+      .send({ sessionId: SESSION_ID, message: '校园卡丢了怎么补办?' });
+    expect(res.status).toBe(200);
+    expect(res.body.data.sources[0].title).toContain('校园卡');
+  });
+
+  it('无关短问句仍如实拒答(sources 空,不编造红线不破坏)', async () => {
+    const res = await request(app)
+      .post('/api/ai/chat')
+      .send({ sessionId: SESSION_SHORT, message: '今天天气怎么样?' });
+    expect(res.status).toBe(200);
+    expect(res.body.data.answer).toContain('知识库未覆盖');
+    expect(res.body.data.sources).toEqual([]);
+  });
+});
+
+describe('assistant 落库失败兜底(体检修复 F3/审计 A-04,02 设计 6.3)', () => {
+  it('mock 落库抛错:仍返回 200 与回答,不阻塞响应', async () => {
+    const originalInsert = aiLogDao.insertMessage;
+    const spy = jest.spyOn(aiLogDao, 'insertMessage').mockImplementation(async (data) => {
+      if (data.role === 'assistant') {
+        throw new Error('mock: assistant 落库失败');
+      }
+      return originalInsert(data); // user 消息照常真实落库
+    });
+    try {
+      const res = await request(app)
+        .post('/api/ai/chat')
+        .send({ sessionId: SESSION_DBFAIL, message: '校园卡丢了怎么补办?' });
+      expect(res.status).toBe(200);
+      expect(res.body.success).toBe(true);
+      expect(res.body.data.answer).toContain('降级模式');
+      expect(res.body.data.sources.length).toBeGreaterThanOrEqual(1);
+    } finally {
+      spy.mockRestore();
+    }
+  });
+
+  it('落库断言:该会话仅 user 消息写入,assistant 缺席但不影响应答', async () => {
+    const sessions = await query<Array<{ id: number }>>('SELECT id FROM ai_chat_session WHERE session_key = ?', [
+      SESSION_DBFAIL
+    ]);
+    expect(sessions.length).toBe(1);
+    const messages = await query<Array<{ role: string }>>(
+      'SELECT role FROM ai_chat_message WHERE session_id = ? ORDER BY id ASC',
+      [sessions[0].id]
+    );
+    expect(messages.map((m) => m.role)).toEqual(['user']);
   });
 });

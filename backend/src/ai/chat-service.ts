@@ -98,17 +98,21 @@ export async function chat(sessionId: string, message: string): Promise<AiReply>
     }
   }
 
-  // 5. assistant 消息落库(含 sources_json/mode/retriever/latency_ms)
+  // 5. assistant 消息落库(02 设计 6.3:失败不阻塞响应,记 error 日志,对话可用性优先)
   const latencyMs = Date.now() - startedAt;
-  await aiLogDao.insertMessage({
-    sessionId: sessionIdDb,
-    role: 'assistant',
-    content: answer,
-    sourcesJson: sourceItems,
-    mode,
-    retriever: result.retriever,
-    latencyMs
-  });
+  try {
+    await aiLogDao.insertMessage({
+      sessionId: sessionIdDb,
+      role: 'assistant',
+      content: answer,
+      sourcesJson: sourceItems,
+      mode,
+      retriever: result.retriever,
+      latencyMs
+    });
+  } catch (err) {
+    console.error('[ai-chat] assistant 消息落库失败(不阻塞回答返回,可由导出兜底补录)', err);
+  }
 
   return { answer, sources: sourceItems, mode, retriever: result.retriever };
 }
