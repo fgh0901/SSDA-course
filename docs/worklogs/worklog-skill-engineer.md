@@ -53,3 +53,55 @@
 2. **前后端目录名**:简报未指定,skills 按 `backend/`、`frontend/` 约定;如有其他命名请裁决。
 3. **分页默认值**:skills 按 page=1、pageSize 默认 10 上限 100 表述,建议随 Phase 1 契约冻结一并确认。
 4. **导出文件名/字段**:ssda-ai-log 对 `npm run export:ai-logs` 的 JSONL 字段与文件名为默认定义,建议总控确认后写入契约。
+
+## 任务 2:终版迭代(Phase 3/5)
+
+### 任务书(2026-10-24,总控指令)
+
+- **目标**:把 Phase 3 开发沉淀的新经验回写 `.zcode/skills/`,使 skills 与代码/契约/测试现状一致;每个修订处追加版本记录。
+- **迭代依据**(总控给出,已逐条核实代码):
+  1. 小步上库纪律(Conventional Commits、按逻辑单元、只 add 自己路径)——skills 中凡涉及 git 的表述需对齐
+  2. AI 双模式:DeepSeek 适配器实装(OpenAI 兼容、AbortController 超时、max_tokens 600、temperature 0.3);注入防线落位(system=固定约束 v1+资料块,user=用户原文);拒答红线两种模式不变
+  3. 检索 v1.1:整句 strongTerm ×2、步长 1 重叠 2-gram、覆盖率权重(旧公式已废)
+  4. 测试约束:后端 jest 必须 --runInBand(TCK- 前缀清理,并行 worker 互删数据);LLM 测试用 jest.spyOn(global,'fetch')+假端口
+  5. Windows 工具链:Git Bash curl 中文参数 GBK 乱码→接口实测用 node fetch
+  6. 契约 v1.1:补登记 5 个详情端点与 daysRemaining;TC-11~16 已登记于 docs/testing/tc-mapping.md
+  7. UI 设计体系:docs/design/04-ui-design-spec.md 设计令牌 + frontend/src/styles/index.css
+  8. 404 兜底路由、前端 chunk 拆分 element-plus/vendor
+- **范围**:只写 `.zcode/skills/` 与本 worklog;不改代码/契约/报告;修订前先读现文,不与既有裁决注记冲突;完成后提交 `docs(skills): final iteration - ai dual-mode, runinband, contract v1.1, ui tokens`(只 add .zcode/skills 与本 worklog)。
+- **预期产出**:5 个 SKILL.md 修订 + 版本记录;ssda-code-audit/ssda-requirements 评估结论(不动需给理由)。
+
+### 节点记录
+
+- 2026-10-24 通读 7 个 SKILL.md 现文,标注与现状的偏差点(backend §2 services/ai 旧路径表述、§9 单模式表述;testing 缺 runInBand 与 LLM mock;contract 清单缺 v1.1 端点;ai-log 脚本注释路径 backend/scripts 与实际 backend/src/scripts 不符;frontend 缺 styles/)。
+- 2026-10-24 事实核实:backend/src/ai/{chat-service.ts, llm/{deepseek-adapter,index,types}, retriever/{local-kb-retriever,index,types}}、src/scripts/export-ai-logs.ts;package.json "test": "jest --runInBand";deepseek-adapter temperature 0.3/max_tokens 600/AbortController(LLM_TIMEOUT_MS 默认 20s);chat-service buildSystemPrompt(固定约束+资料块,用户原文只进 user);检索打分 = (标题×3+正文×1,整句×2)×(1+覆盖率)+已核实×1+有效期内×1;契约 v1.1 补 5 详情端点(locations/:id 公开 + admin services/activities/courses/teachers /:id)与 daysRemaining;tc-mapping.md 第二节 TC-11~16 已登记;frontend/src/styles/index.css 与 04-ui-design-spec.md 存在;vite manualChunks element-plus/vendor、router 404 兜底 NotFoundView;简报第 8 节第 0 条小步上库纪律。
+- 2026-10-24 修订 ssda-backend(§2 目录树、§9 双模式、§10 测试、§11 Do、版本记录)→ ssda-testing(§1、§2、版本记录、description TC-01~16)→ ssda-api-contract(§2、§7、版本记录)→ ssda-ai-log(§2、§4 脚本路径、版本记录)→ ssda-frontend(§2 目录树、§1 设计令牌引用、§11 Do、版本记录)→ ssda-requirements(编号体系表 TC 行补 TC-11~16 登记事实,版本记录)。
+- 2026-10-24 评估 ssda-code-audit:§3.7 注入/降级/隐私检查项与实现一致(防线已落位恰好是审计基线),无失效引用路径——**不动**,不为改而改。
+- 2026-10-24 自测:grep 复查 7 个文件无 "services/ai"、无 "TC-01~TC-10" 孤立表述残留(testing 表格骨架 TC-01~10 保留,属简报原文);版本记录 6 处格式统一;未改动 skills 范围外文件。
+
+### 完成报告(2026-10-24)
+
+#### 已完成(6 个 SKILL.md 修订 + 1 个评估不动)
+
+1. **ssda-backend**(v1.1):§2 目录树补 `src/ai/`(chat-service + llm/deepseek-adapter + retriever/local-kb-retriever)与 `src/scripts/`(export-ai-logs),修正原"services 内 ai/ 子目录"旧表述;§9 重写为 AI 双模式事实——deepseek/fallback 双模式(Key 配置即切换)、适配器参数(OpenAI 兼容、temperature 0.3、max_tokens 600、stream:false、AbortController 超时默认 20s)、注入防线落位(system=固定约束 v1+资料块,user=用户原文)、拒答红线两模式一致、检索 v1.1 公式(整句×2/步长 1 重叠 2-gram/覆盖率权重);§10 补 runInBand 红线(TCK- 前缀清理互删)与 LLM fetch-mock 模式(ai-chat-llm.test.ts,假端口兜底);§11 Do 补小步上库纪律。
+2. **ssda-testing**(v1.1):§1 补 runInBand 红线与 LLM 侧不打真实外网的两套件模式;§2 标注 tc-mapping.md 已建立且 TC-11~16 补充用例已登记("二、"节);frontmatter description 同步 TC-01~TC-16。
+3. **ssda-api-contract**(v1.1):§2 标注契约当前版本 v1.1(冻结,只增不删);§7 清单补 v1.1 的 5 个详情端点(公开 GET /api/locations/:id;管理端 services/activities/courses/teachers 的 GET /:id)、过期工作台 daysRemaining、AI chat mode 取值;同步补入契约 v1.0 已有的公开 courses/:id、teachers/:id 详情(契约 0.1 表在册,避免清单内部不一致);既有裁决注记(VALIDATION_ERROR 统一、mode 命名裁决)未动。
+4. **ssda-ai-log**(v1.1):§2 补双模式现状(mode=deepseek|fallback、Key 配置即切换不改代码、落库带 mode/retriever/latency_ms);§4 脚本注释路径修正为 backend/src/scripts/export-ai-logs.ts(已实装);§5 补"阶段材料附降级率统计"检查项。
+5. **ssda-frontend**(v1.1):§2 目录树补 `styles/`(index.css);§6 补设计令牌引用(docs/design/04-ui-design-spec.md,主色/四态色/间距/圆角/阴影)。
+6. **ssda-requirements**(v1.1):§3 编号体系表 TC 行补"TC-01~10(简报冻结)+ TC-11~16(项目补充,总控登记)",加注防被误判为自创编号——必要对齐,非为改而改。
+7. **ssda-code-audit**:**不动**。理由:§3.7 注入/降级/隐私均为检查项措辞,与已落位实现一致(防线落位恰为审计基线);`docs/audits/` 待 Phase 5 产出,skill 已注明归属;无失效引用路径。
+
+#### 产出物路径
+- D:\SSDA\.zcode\skills\{ssda-backend,ssda-testing,ssda-api-contract,ssda-ai-log,ssda-frontend,ssda-requirements}\SKILL.md(各末尾含 "> v1.1 2026-10-24:…" 版本记录)
+- 本 worklog。
+
+#### 自测情况
+- grep 复查:全库无活引用 "services/ai";版本记录 6/6 修订文件;runInBand 双处一致;TC-11 双处一致;styles 引用 1 处。
+- 事实来源全部经代码/契约核实(backend/src/ai、package.json、deepseek-adapter.ts、chat-service.ts、local-kb-retriever.ts、api-contract.md 0.1、tc-mapping.md、vite.config.ts、router/index.ts、简报第 8 节第 0 条),未凭记忆改写。
+- 范围核查:仅改动 .zcode/skills/ 6 个文件与本 worklog,未触碰代码、契约、报告及其他 Agent 日志。
+
+#### 遗留问题
+- 无阻塞。ssda-code-audit 若 Phase 5 审计中确认 `docs/audits/` 命名或流程有变,再走同一迭代流程。
+
+#### 需总控决策事项
+- 无。本轮全部按总控指令落地;唯一自主裁量是契约清单同步补入 v1.0 已登记的公开 courses/:id、teachers/:id(理由如上),如认为超出授权可回退该两行。

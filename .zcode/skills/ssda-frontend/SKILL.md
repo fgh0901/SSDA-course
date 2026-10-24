@@ -32,6 +32,7 @@ frontend/src/
 ├── router/index.ts # 路由表 + 全局守卫
 ├── composables/    # 组合式函数(usePagination 等)
 ├── types/          # 与契约字段一致的 TS 类型
+├── styles/         # index.css:全局样式与设计令牌落地(main.ts 引入)
 └── __tests__/      # *.spec.ts(Vitest)
 ```
 
@@ -125,6 +126,7 @@ export const useAuthStore = defineStore('auth', () => {
 - 提示:操作结果用 `ElMessage`,确认用 `ElMessageBox.confirm`;空数据用 `el-empty` 并给引导文案(TC-02/TC-03 的"无结果提示")。
 - 状态标签:用 el-tag 展示 `draft/pending_review/published/takedown`,过期知识在详情页顶部展示过期横幅(TC-09)。
 - 统一中文文案;按钮防重复提交(loading 态)。
+- **设计令牌**:颜色(主色/四态色)、间距、圆角、阴影以 `docs/design/04-ui-design-spec.md` 为准,全局样式与令牌变量在 `src/styles/index.css`(main.ts 引入);组件内优先用令牌,不散写同类色值/间距,与既有页面保持观感一致。
 
 ## 7. 路由与守卫
 
@@ -229,3 +231,5 @@ onMounted(fetchList);
 ## 11. 协作约束
 
 完成节点时更新 `docs/worklogs/worklog-<agent>.md`;接口契约有出入时不改契约,记录并在完成报告提请总控。
+
+> v1.1 2026-10-24:§2 目录树补 `styles/`(index.css);§6 补设计令牌引用(docs/design/04-ui-design-spec.md)(总控指令,Phase 3 终版迭代)。

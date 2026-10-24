@@ -1,6 +1,6 @@
 ---
 name: ssda-testing
-description: SSDA 项目测试与验收规范(Jest/Supertest + Vitest)。凡是编写或执行后端/前端自动化测试、维护 TC-01~TC-10 与自动化用例的映射表、执行阶段回归、编写测试报告、准备验收材料的任务,必须先使用本 skill;TC-01~TC-10 全覆盖是验收硬性条件。
+description: SSDA 项目测试与验收规范(Jest/Supertest + Vitest)。凡是编写或执行后端/前端自动化测试、维护 TC-01~TC-16 与自动化用例的映射表、执行阶段回归、编写测试报告、准备验收材料的任务,必须先使用本 skill;TC-01~TC-10 全覆盖是验收硬性条件(TC-11~TC-16 为项目补充用例,一并回归)。
 ---
 
 # ssda-testing:测试与验收规范
@@ -13,10 +13,14 @@ description: SSDA 项目测试与验收规范(Jest/Supertest + Vitest)。凡是�
 - 前端:Vitest + @vue/test-utils,测试代码在 `frontend/src/__tests__/`;运行 `cd frontend && npm test`
 - 被测对象:后端 `src/app.ts` 导出的 Express 实例(不监听端口);前端组件整体 mount
 - 组织细节与代码模式见 `ssda-backend` 第 10 节、`ssda-frontend` 第 8 节
+- **runInBand 红线**:后端 `npm test` 固定 `jest --runInBand`(package.json 已固化)——各套件共用 `TCK-` 前缀标记清理数据,并行 worker 会互删彼此数据,**禁止**改并行执行;若新增套件,沿用 `TCK-` 前缀 + 各自清理的约定。
+- **LLM 侧不打真实外网**:DeepSeek 相关分支用 `jest.spyOn(global, 'fetch')` mock(见 `backend/tests/ai-chat-llm.test.ts`,覆盖超时/非 2xx/畸形 JSON/空 choices),`DEEPSEEK_BASE_URL` 指向 127.0.0.1 未监听端口兜底;Key 未配置的 fallback 真实链路由 `ai-chat.test.ts` 实测,两套件互不依赖。
 
 ## 2. TC-01~TC-10 ↔ 自动化用例映射表(核心资产)
 
 **正式映射表存放于 `docs/testing/tc-mapping.md`**,由测试 Agent 建立并持续维护;下表为骨架,创建正式表时以简报 3.4 的"操作/预期"原文为准,路径可按实际实现微调,但**每个 TC 必须至少有一条自动化用例或显式注明"人工执行+原因"**。
+
+> 现状(2026-10-24):正式表已建立,TC-01~TC-10 之外还登记了 **TC-11~TC-16 项目补充用例**(该文件"二、"节:AI 命中/拒答/降级落库、分类删除 409、任教关系维护、AI 日志导出),阶段回归时一并执行;TC-01~TC-10 全覆盖仍是验收硬性条件。
 
 | TC | 操作(简报 3.4) | 预期(简报 3.4) | 后端自动化用例(建议) | 前端自动化用例(建议) | 状态 |
 |---|---|---|---|---|---|
@@ -147,3 +151,5 @@ mysql -u root -p < db/seed.sql     # 灌入基线数据
 ## 9. 协作约束
 
 测试 Agent 按项目规范维护 `docs/worklogs/worklog-testing.md`;发现的缺陷不属于测试 Agent 修复范围时,在映射表"状态"列标记失败并在完成报告中列明,由总控分派。
+
+> v1.1 2026-10-24:§1 补 jest --runInBand 红线与 LLM fetch-mock 测试模式(ai-chat-llm.test.ts 模式);§2 标注 tc-mapping.md 已建立且 TC-11~TC-16 补充用例已登记;description 同步 TC-01~TC-16(总控指令,Phase 3 终版迭代)。

@@ -25,12 +25,14 @@ backend/
 ├── src/
 │   ├── routes/        # 路由定义:只做"路径 → 中间件 → 控制器"的装配
 │   ├── controllers/   # 控制器:取参数、调 service、组装响应包
-│   ├── services/      # 业务逻辑:规则、事务、跨表编排;ai/ 子目录放 AI 适配器
+│   ├── services/      # 业务逻辑:规则、事务、跨表编排
 │   ├── dao/           # 数据访问:只写 SQL(参数化)与行↔对象映射
 │   ├── middlewares/   # requireAuth / requireRole / errorHandler 等
 │   ├── validators/    # zod schema,按模块一个文件
+│   ├── ai/            # AI 组件(Phase 3 实装):chat-service.ts + llm/(deepseek-adapter)+ retriever/(local-kb-retriever)
 │   ├── config/        # db 连接池、env 读取、日志
 │   ├── utils/         # AppError、logger 等通用工具
+│   ├── scripts/       # 运维脚本:export-ai-logs.ts(npm run export:ai-logs)
 │   ├── app.ts         # Express 应用(导出 createApp() 供 Supertest 用)
 │   └── index.ts       # 监听 3000(现有脚手架文件名;不新增 server.ts)
 ├── tests/             # *.test.ts,与 src 同构命名
@@ -179,12 +181,18 @@ export function requireRole(role: string) {
 - error 级别必须记录堆栈与上下文,但**不记录**密码、token 全文、API Key。
 - 每个请求建议挂一个耗时日志中间件,服务于"普通查询 2 秒内"的验收口径。
 
-## 9. AI 组件(后端职责)
+## 9. AI 组件(后端职责,Phase 3 已实装为双模式)
 
-- `KnowledgeRetriever` 接口:默认实现 `LocalKbRetriever`(查自建库);预留 `HttpKbRetriever`,仅改配置切换。
-- LLM 用 DeepSeek(`deepseek-chat`,OpenAI 兼容协议),适配器模式可切智谱/通义;`DEEPSEEK_API_KEY` 只放 `.env`。
-- 降级:LLM 超时/异常 → 本地检索 + 模板化回答并明确提示;检索不到可信内容 → 提示"请核实",**禁止编造**。
-- 用户输入只能进 user message,禁止拼进 system prompt(提示词注入防线)。
+代码位于 `src/ai/`:`chat-service.ts`(编排:落库 → 检索 → 生成/降级)+ `llm/deepseek-adapter.ts` + `retriever/local-kb-retriever.ts`。
+
+- **双模式(已实装,对前端返回 `mode: "deepseek" | "fallback"`)**:
+  - deepseek 模式:`DEEPSEEK_API_KEY` 配置即启用 DeepSeek 生成,无需改代码;
+  - fallback 模式:Key 未配置或 LLM 超时/异常 → 本地检索 + 模板化回答并明确提示降级;
+  - **拒答红线两种模式一致**:检索不到可信内容(`isReliable=false`)→ 不调 LLM 直接返回"知识库未覆盖该问题,请咨询相关部门核实",`sources=[]`,禁止编造。
+- **DeepSeek 适配器参数(与 02-ai-component-design.md 一致)**:OpenAI 兼容协议 `POST {DEEPSEEK_BASE_URL}/chat/completions`;`temperature: 0.3`、`max_tokens: 600`、`stream: false`;`AbortController` 超时(`LLM_TIMEOUT_MS`,默认 20s),超时按失败处理走降级;`DEEPSEEK_API_KEY` 只放 `.env`。
+- **注入防线(已落位)**:system prompt = 固定约束(v1)+ 检索资料块,由 `buildSystemPrompt(sources)` 组装;**用户原文只进 user message,禁止拼进 system prompt**。
+- **检索器 v1.1(旧公式已废)**:2~8 字问句整句保留为 strongTerm(命中 ×2 加权);≥3 字分段切**步长 1 的重叠 2-gram**(保住词边界);打分 =(标题命中 ×3 + 正文命中 ×1,整句 ×2)×(1 + 查询词覆盖率)+ 已核实 ×1 + 在有效期内 ×1;检索不到可信内容时提示"请核实"。检索关键词同样只进 SQL 参数(参数化)。
+- `KnowledgeRetriever` 接口预留 `HttpKbRetriever`,仅改配置切换。
 - 对话落 `ai_chat_session` / `ai_chat_message`,仅匿名 sessionId。详见 `ssda-ai-log`。
 
 ## 10. Jest + Supertest 测试组织
@@ -192,6 +200,8 @@ export function requireRole(role: string) {
 - 测试文件放 `backend/tests/`,命名 `<模块>.test.ts`;`app.ts` 导出 app,不监听端口,供 Supertest 直接调用。
 - describe/it 用中文,带 TC 编号(见 `ssda-testing`);测试数据不得篡改 `db/seed.sql` 基线。
 - 每条用例自备数据、用后清理;数据库相关用例可包事务回滚或使用独立测试库。
+- **runInBand 红线**:`npm test` 固定 `jest --runInBand`(package.json 已固化)——各套件共用 `TCK-` 前缀标记做数据清理,并行 worker 会互删彼此数据;**禁止**为提速改并行执行。
+- **LLM 测试不打真实外网**:参考 `tests/ai-chat-llm.test.ts`——用 `jest.spyOn(global, 'fetch')` mock 适配器 HTTP(覆盖超时/非 2xx/畸形 JSON/空 choices 分支),`DEEPSEEK_BASE_URL` 指向 127.0.0.1 未监听端口兜底,mock 失效只会本地快速失败;`DEEPSEEK_API_KEY` 未配置的 fallback 路径则由 `tests/ai-chat.test.ts` 直接实测。
 
 ```ts
 // tests/admin-auth.test.ts
@@ -215,6 +225,7 @@ describe('管理接口权限(TC-07)', () => {
 - 所有 SQL 参数化;排序/过滤字段走白名单
 - 错误一律 `next(err)` 交给统一中间件;500 只回"系统繁忙"
 - 管理接口 requireAuth + requireRole 双中间件
+- **小步上库**:每完成一个逻辑单元按 Conventional Commits 立即提交,只 `git add` 自己负责的路径,提交前 lint/test 全绿(简报第 8 节第 0 条)
 - 每完成一个节点更新 `docs/worklogs/worklog-<agent>.md`
 
 **Don't**
@@ -228,3 +239,5 @@ describe('管理接口权限(TC-07)', () => {
 ## 12. 冲突处理
 
 本 skill 与 `docs/design/api-contract.md` 或简报冲突时,以契约/简报为准,并在完成报告中上报总控。契约变更提案一律不经由本 skill 执行。
+
+> v1.1 2026-10-24:§2 目录树补 `src/ai/`、`src/scripts/` 真实结构(修正 services/ai 旧表述);§9 更新为 AI 双模式事实(适配器参数/注入防线落位/降级链路/检索 v1.1);§10 补 jest --runInBand 红线与 LLM fetch-mock 测试模式;§11 补小步上库纪律(总控指令,Phase 3 终版迭代)。

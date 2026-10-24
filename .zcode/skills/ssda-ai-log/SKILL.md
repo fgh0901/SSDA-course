@@ -22,6 +22,7 @@ description: SSDA 项目的 AI 使用日志规范(课程硬性要求:每阶段�
 - **隐私红线**:仅使用匿名 sessionId(uuid),不收集姓名、学号等个人身份信息;不做用户画像。
 - **可解释**:AI 回答必须基于 `KnowledgeRetriever` 检索到的知识库内容,并在消息中保留来源引用(sources)。
 - **鲁棒(降级留痕)**:LLM 超时/异常时走本地检索 + 模板化回答并明确提示;该消息需标记来源类型,便于区分"大模型生成"与"降级模板"。检索不到可信内容时提示"请核实",禁止编造。
+- **现状(Phase 3 双模式已实装)**:`mode` 取值 `deepseek | fallback`——`DEEPSEEK_API_KEY` 配置即启用 DeepSeek 生成,未配置或 LLM 超时/异常自动降级 fallback,**切换只取决于 Key 配置,不改代码**;每条 assistant 消息落库带 `mode`/`retriever`/`latency_ms`,导出时可统计降级率。
 - 后端实现细节见 `ssda-backend` 第 9 节;管理端查看/导出入口:`GET /api/admin/ai-logs`、`?export=1`。
 
 ## 3. 轨道②:开发过程 AI 使用日志
@@ -93,7 +94,7 @@ docs/ai-logs/
 - 导出脚本核心逻辑参考(实现方按此口径对齐,细节可调):
 
 ```ts
-// backend/scripts/export-ai-logs.ts(要点示意)
+// backend/src/scripts/export-ai-logs.ts(要点示意,已实装)
 const [sessions] = await pool.query('SELECT id, session_id, created_at FROM ai_chat_session');
 const [messages] = await pool.query(
   'SELECT session_id, role, content, sources, mode, created_at FROM ai_chat_message ORDER BY created_at'
@@ -117,6 +118,7 @@ const [messages] = await pool.query(
 - [ ] 关键提示词已存档到 `docs/ai-logs/prompts/` 且带版本
 - [ ] AI 回答均附知识来源;无来源时明确"待核实"话术
 - [ ] 降级路径可用且消息标记 `fallback`
+- [ ] 阶段材料已附导出统计的降级率(fallback 条数/总条数),作为鲁棒性证据
 - [ ] 仅匿名 sessionId;日志与导出中无个人身份信息、无密钥
 - [ ] `DEEPSEEK_API_KEY` 未出现在任何日志、提示词存档、导出文件中
 
@@ -149,3 +151,5 @@ const [messages] = await pool.query(
 ## 8. 协作约束
 
 本 skill 由全体 Agent 共用;目录结构或导出格式如需调整,在完成报告中提请总控裁决,不得私自变更字段口径。课程要求原文以《软件系统设计与应用》课程设计实施文件与简报第 1 节为准。
+
+> v1.1 2026-10-24:§2 补双模式现状(mode=deepseek|fallback,Key 配置即切换,不改代码);§4 修正导出脚本路径为 backend/src/scripts/export-ai-logs.ts(已实装);§5 补"阶段材料附降级率统计"检查项(总控指令,Phase 3 终版迭代)。

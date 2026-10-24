@@ -16,7 +16,7 @@ description: SSDA 项目的 API 契约与接口约定。凡是设计新接口、
 
 ## 2. 唯一契约文件
 
-- 契约文件:`docs/design/api-contract.md`(Phase 1 冻结)。
+- 契约文件:`docs/design/api-contract.md`(**当前版本 v1.1**:v1.0 Phase 1 冻结,v1.1 为阶段体检补登记,只增不删)。
 - **子 Agent 没有直接修改契约的权限**(简报第 8 节)。需要新增/变更接口时:在自己的工作日志记录变更提案 → 完成报告中列出 → 由总控裁决并统一修订 api-contract.md → 之后才能实现。
 - 本 skill 与契约冲突时,以 api-contract.md 为准并上报。
 
@@ -74,7 +74,7 @@ description: SSDA 项目的 API 契约与接口约定。凡是设计新接口、
 
 `VALIDATION_ERROR`(400)、`UNAUTHORIZED`(401)、`FORBIDDEN`(403)、`NOT_FOUND`(404)、`CONFLICT`(409)、`INTERNAL_ERROR`(500);业务态可扩展如 `KNOWLEDGE_EXPIRED`。(总控裁决 2026-10-24:统一 VALIDATION_ERROR,废弃 INVALID_PARAM)
 
-## 7. 当前项目接口清单(概要,细节以 api-contract.md 为准)
+## 7. 当前项目接口清单(概要,细节以 api-contract.md 为准;契约冻结至 v1.1)
 
 **公开接口(无需登录)**
 
@@ -83,16 +83,18 @@ description: SSDA 项目的 API 契约与接口约定。凡是设计新接口、
 - `GET /api/knowledge` 知识列表(page/pageSize/keyword/categoryId)
 - `GET /api/knowledge/:id` 知识详情
 - `GET /api/services` 办事指南;`GET /api/activities` 活动
-- `GET /api/locations` 地点;`GET /api/courses` 课程;`GET /api/teachers` 教师
+- `GET /api/locations` 地点;`GET /api/locations/:id` 地点详情(v1.1 补登记)
+- `GET /api/courses` 课程;`GET /api/courses/:id` 课程详情(含任教教师与上课地点)
+- `GET /api/teachers` 教师;`GET /api/teachers/:id` 教师详情(含任教课程与答疑时间)
 - `GET /api/search` 聚合搜索(多类型结果 + 类型筛选)
-- `POST /api/ai/chat` AI 问答(仅匿名 sessionId,不收集个人身份)
+- `POST /api/ai/chat` AI 问答(仅匿名 sessionId,不收集个人身份;`mode: "deepseek" | "fallback"`)
 
 **管理接口(JWT 保护)**
 
 - `POST /api/admin/auth/login` 登录(返回 token)
 - `/api/admin/knowledge` CRUD + 审核 + 上下架
-- `/api/admin/{categories,services,activities,locations,courses,teachers}` 各资源 CRUD
-- `GET /api/admin/knowledge/expired` 过期信息工作台
+- `/api/admin/{categories,services,activities,locations,courses,teachers}` 各资源 CRUD;其中 **services/activities/courses/teachers 另有 `GET /:id` 单条详情(v1.1 补登记,编辑回显在用)**
+- `GET /api/admin/knowledge/expired` 过期信息工作台(响应含 `daysRemaining` 距过期天数,v1.1)
 - `GET /api/admin/knowledge/:id/change-logs` 修改日志
 - `GET /api/admin/ai-logs` AI 对话记录(`?export=1` 导出)
 
@@ -155,3 +157,5 @@ export async function listKnowledge(req: Request, res: Response, next: NextFunct
 ## 12. 协作约束
 
 实现接口的任务须同步维护 `docs/worklogs/worklog-<agent>.md`;涉及契约变更的提案写进完成报告,交总控裁决。相关规范见 `ssda-backend`(实现)、`ssda-frontend`(对接)、`ssda-testing`(验证)。
+
+> v1.1 2026-10-24:§2 标注契约当前版本 v1.1(冻结,补登记只增不删);§7 接口清单同步 v1.1 的 5 个详情端点(公开 `GET /api/locations/:id` + 管理端 services/activities/courses/teachers 的 `GET /:id`)、`daysRemaining` 字段与 `mode` 双模式取值(总控指令,Phase 3 终版迭代;既有裁决注记未改动)。
