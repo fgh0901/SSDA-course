@@ -18,6 +18,7 @@ export function createLlmAdapter(): LlmAdapter {
   if (!env.DEEPSEEK_API_KEY) {
     return new NullLlmAdapter();
   }
-  // Phase 3 实装 HTTP 调用;当前 DeepSeekAdapter.chatCompletion 抛错,同样走降级
+  // Phase 3 已实装:DeepSeekAdapter 走 OpenAI 兼容 HTTP(超时/非 2xx/异常抛 LlmError),
+  // 失败由 chat-service 统一降级到本地检索模板
   return new DeepSeekAdapter();
 }

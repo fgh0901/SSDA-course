@@ -75,3 +75,15 @@
 - **F5[P2] CORS 收敛**:`env.ts` 增 CORS_ORIGIN(默认 http://localhost:5173,逗号分隔);`app.ts` cors({ origin: 白名单数组 });`.env.example` 同步;`tests/cors.test.ts` 4 用例(白名单放行/多 origin/非白名单无 ACAO 头/预检 204 放行与拒绝)。
 - **验收**:`npm run lint` ✅、`npm test` 15 套件 119 用例(104+15 新增)全绿 ✅、`npm run build` ✅。未触碰 frontend/、契约、skills、.gitignore;未 git 操作;MySQL 仅用 ssda_test(测试数据自备用后清理);3000 端口用户自启服务未受影响。
 - **上报总控**:①02-ai-component-design.md 2.1 打分公式已按任务指令引入覆盖率权重与整句加权(设计文档未改,存在口径漂移,建议下轮同步);②审计 A-03(admin 默认口令提示)、A-07~A-11 均属总控裁决/前端/文档范围,未处理。
+
+---
+
+## 任务 3:Phase 3 DeepSeek 适配器(总控指令)
+
+- [2026-10-24] 任务书(执行人:ssda-backend-dev;唯一设计依据 docs/design/02-ai-component-design.md §1 链路/§3 提示词/§4 适配器参数;DEEPSEEK_API_KEY 用户暂缺,真实 HTTP 无法联调,全部以 `jest.spyOn(global,'fetch')` mock 覆盖):
+  1. **C1 DeepSeekAdapter 实装(OpenAI 兼容)**:`POST {DEEPSEEK_BASE_URL}/chat/completions`,Headers `Authorization: Bearer ${DEEPSEEK_API_KEY}`、`Content-Type: application/json`;body `{ model: DEEPSEEK_MODEL(默认 deepseek-chat), messages[system,user], temperature 0.3, max_tokens 600, stream false }`(max_tokens 600 按 02 设计 §3.2/§4 补齐,任务书正文未列);AbortController + LLM_TIMEOUT_MS(默认 20000)超时按失败;解析 choices[0].message.content,非 2xx/网络错误/空内容/JSON 结构异常一律抛 LlmError 由 ChatService 降级;保持 llm/types.ts 签名,工厂 index.ts 逻辑不变(Key 已配置→DeepSeekAdapter,否则 NullLlmAdapter)。
+  2. **C2 ChatService 双模式复核**:isReliable=false 不调 LLM(拒答红线,sources=[]);isReliable=true 调 LLM,成功 mode='deepseek'、失败(超时/异常/空文本)降级 mode='fallback' 并记日志;注入防线:system = system prompt v1 全文 + 资料编号块(资料非用户输入,允许进 system),user message 仅用户原文(与 02 设计 §3.1 一致,无口径冲突);sources 返回并落库,latency=检索+生成总耗时。
+  3. **C3 新增测试 ≥7(fetch mock)**:①Key 已配置+LLM 200 → mode='deepseek'/answer=mock 文本/sources 非空/请求体含 Authorization+model+temperature/system 含资料编号/user 仅问题;②超时(AbortController)→降级;③500/畸形 JSON/空 choices →降级;④Key 未配置→fetch 不被调用走降级;⑤拒答路径 fetch 不被调用 sources=[];⑥注入文本仅出现在 user message;⑦latency_ms 落库有值 ≥0。
+  4. **C4 验收**:lint/test(119+新增)/build 全绿;小步两笔提交(adapter 一笔;双模式测试一笔),各自只 add backend/ 与本 worklog;.env 不提交。
+- 边界:只写 backend/ 与本 worklog;不碰 frontend/、db/、skills;不 git push;MySQL 仅用 ssda/ssda_test;3000 端口运行中服务不受影响(tsx watch 热载属预期)。
+- 已知事实:jest 以 --runInBand 串行;现有 ai-chat.test.ts 16 用例(任务 2 后共 119)不得破坏。
