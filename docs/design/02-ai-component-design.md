@@ -54,7 +54,7 @@ export interface KnowledgeRetriever {
 ### 2.1 LocalKbRetriever(默认实现,启用)
 
 - 数据范围:**仅已发布/上架内容**——`knowledge(status='published')`、`service_guide(is_enabled=1)`、`campus_activity(is_enabled=1)`、`course`、`teacher`、`location`;已下架/草稿/待审核一律检索不到。
-- 检索方式(Phase 2 实现):对 question 做分词/去停用词后,各表 `title LIKE CONCAT('%', ?, '%')` 优先、`content/描述` 次之(全部参数化);简单打分 = 标题命中 ×3 + 摘要命中 ×1 + 已核实 ×1 + 在有效期内 ×1;按 score 降序取 top-5;最高分低于阈值(默认 1)时 `isReliable=false`。过期知识可被检索但在 `snippet` 中带"(已过期)"标注。
+- 检索方式(Phase 2 实现,体检后 v1.1 修订):对 question 先保整句(2~8 字问句整句为 strongTerm,命中 ×2 加权),≥3 字分段切**步长 1 的重叠 2-gram**(修复步长 2 切分丢失词边界的问题);各表 `title LIKE CONCAT('%', ?, '%')` 优先、`content/描述` 次之(全部参数化);打分 = (标题命中 ×3 + 摘要命中 ×1,整句命中 ×2)×(1 + 查询词覆盖率) + 已核实 ×1 + 在有效期内 ×1;按 score 降序取 top-5;最高分低于阈值(默认 1)时 `isReliable=false`。过期知识可被检索但在 `snippet` 中带"(已过期)"标注。覆盖率权重用于抑制高频 2-gram 的排序噪声,保证命中查询中不同关键词的条目优先。
 - 每条结果标注来源字段(`source/department` 等)与 `updatedAt`,供前端展示与 `sources_json` 落库。
 - 说明:关键词匹配属初版实现;升级为全文索引属契约外内部优化,不影响接口。
 

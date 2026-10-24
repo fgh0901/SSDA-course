@@ -53,3 +53,25 @@
 4. **AI 专项测试用例编号**:契约追溯矩阵备注 3 建议 AI 问答专项用例登记为 TC-11+(提请总控裁决);当前已在 ai-chat.test.ts 以"AI 对话降级全链路"命名覆盖(检索命中/未命中拒答/降级/落库/导出/隐私)。
 5. **DeepSeek 适配器**:按任务要求 Phase 2 不实现 HTTP 调用,已预留 src/ai/llm 接口与工厂;Key 配置后 chat-service 无需改动即可在 Phase 3 接入(届时 DeepSeekAdapter.chatCompletion 实装 HTTP)。
 6. **jest forceExit**:mysql2 连接池持有 TCP 句柄,afterAll 数据清理已完成,进程退出用 forceExit;后续如引入连接池显式关闭可移除。
+
+---
+
+## 任务 2:体检修复(总控指令)
+
+- [2026-10-24] 任务书(执行人:ssda-backend-dev;依据 code-audit-report.md A-01/A-02/A-04/A-05/A-06 与 ai-chat-quality-report.md 建议 1/2/4):
+  1. **F1[P1]** `backend/src/config/env.ts` JWT_SECRET 去掉 `.default(...)`,缺失/过短时启动即报错(fail fast);tests/env.setup.ts 已设置不破坏现有测试;.env.example 保留占位说明并注明必填。
+  2. **F2[P2]** `backend/src/ai/retriever/local-kb-retriever.ts`:①2~8 字分段整句保留参与匹配,同时追加 2-gram 兜底(修复 8 字短问句"校园跑有什么要求?"误拒答);②打分引入"查询词覆盖率"权重(命中查询中不同词更多者优先),整句命中加权,降低单 2-gram 高频噪声(校园卡问句 top1 不再被校园跑条目抢占)。新增测试:短问句命中非拒答、校园卡 top1、无关短问句仍拒答。
+  3. **F3[P2]** `backend/src/ai/chat-service.ts` assistant 消息落库包 try/catch,失败记 error 日志仍返回回答(02-ai-component-design 6.3:落库失败不阻塞响应);mock 落库抛错场景测试。
+  4. **F4[P3]** 校验错误文案中文化 + 统一 validate 中间件:course.controller.ts removeRelation 内联 zod 改 idParamSchema/relationId 路径参数 schema(中文 message);admin.routes.ts 关系删除路由补 validate('params');search/expired/change-logs 三处控制器内联 zod 抽到 validators 并改路由级 validate 中间件;确保全接口 400 message 中文。测试:DELETE /api/admin/courses/1/teachers/abc → 400 且中文。
+  5. **F5[P2]** CORS 收敛:env.ts 增 `CORS_ORIGIN`(默认 http://localhost:5173,逗号分隔多个);app.ts cors 白名单;.env.example 同步;测试跨域放行/拒绝行为。
+- 验收口径:`npm run lint`、`npm test`(104+新增全过)、`npm run build` 全绿;不碰 frontend/、契约、skills、.gitignore;不 git 操作;MySQL 仅用 ssda/ssda_test。
+
+### 任务 2 执行记录(2026-10-24)
+
+- **F1[P1] JWT_SECRET 必填**:`src/config/env.ts` 去掉 `.default('ssda-dev-secret-change-me-please')`,改 safeParse + 抛错并指明字段(fail fast);`tests/env.test.ts` 3 用例(缺失即抛/少于 16 字符即抛/合法配置正常解析,以 jest.mock 屏蔽 .env 精确模拟漏配);`.env.example` 注明必填语义。tests/env.setup.ts 原有设置不受影响。
+- **F2[P2] 检索短句漏检与排序噪声**:`src/ai/retriever/local-kb-retriever.ts` 重构 tokenize → analyzeQuery:①2~8 字分段整句保留为 strongTerm(命中 ×2 加权)且所有 ≥3 字分段切**重叠 2-gram(步长 1)**;②打分 = (标题×3+正文×1,整句词×2)×(1+查询词覆盖率)+已核实×1+有效期内×1。**根因修正**:原步长 2 非重叠 2-gram 把"丢了/补办"等词边界全部切丢(实测得到"了怎/么补"),是排序噪声的真正来源;重叠切分后"园卡/补办"等判别性词参与打分,校园卡条目 16.29 vs 校园跑 6.57(实测调试脚本,已删除)。测试 4 用例:tokenize 单元断言、8 字短问句命中非拒答、校园卡 top1、无关短问句仍拒答。
+- **F3[P2] 落库失败不 500**:`src/ai/chat-service.ts` assistant 落库包 try/catch,失败 console.error 后仍返回回答(02 设计 6.3);测试 2 用例:jest.spyOn(aiLogDao,'insertMessage') 仅对 assistant 抛错、user 透传真实落库,断言 200+回答完整、DB 仅 user 消息。
+- **F4[P3] 校验中文化 + 统一中间件**:`course.controller.ts` removeRelation 内联 zod 改 `validated(res,'params')`;`validators/course.schema.ts` 新增 courseTeacherParamsSchema(id 复用 idParamSchema 中文文案);admin.routes.ts 关系删除路由补 validate('params');search/expired/change-logs 三处控制器内联 zod 抽出(`validators/search.schema.ts` 新建、knowledge.schema.ts 增 expiredQuerySchema、change-logs 走 paginationSchema)全部改路由级 validate 中间件;common.schema.ts 增 Pagination 类型。测试 2 用例:DELETE /api/admin/courses/1/teachers/abc → 400 中文(断言不含 zod 英文原文)、id 非数字 → 400 "id 必须为数字"。
+- **F5[P2] CORS 收敛**:`env.ts` 增 CORS_ORIGIN(默认 http://localhost:5173,逗号分隔);`app.ts` cors({ origin: 白名单数组 });`.env.example` 同步;`tests/cors.test.ts` 4 用例(白名单放行/多 origin/非白名单无 ACAO 头/预检 204 放行与拒绝)。
+- **验收**:`npm run lint` ✅、`npm test` 15 套件 119 用例(104+15 新增)全绿 ✅、`npm run build` ✅。未触碰 frontend/、契约、skills、.gitignore;未 git 操作;MySQL 仅用 ssda_test(测试数据自备用后清理);3000 端口用户自启服务未受影响。
+- **上报总控**:①02-ai-component-design.md 2.1 打分公式已按任务指令引入覆盖率权重与整句加权(设计文档未改,存在口径漂移,建议下轮同步);②审计 A-03(admin 默认口令提示)、A-07~A-11 均属总控裁决/前端/文档范围,未处理。
