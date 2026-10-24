@@ -4,6 +4,9 @@ import { ElMessage, ElMessageBox } from 'element-plus';
 import type { FormInstance, FormItemRule } from 'element-plus';
 import { createActivity, deleteActivity, getAdminActivityDetail, getAdminActivities, updateActivity } from '@/api/admin';
 import { getLocations } from '@/api/locations';
+import { isDateTimeString } from '@/utils/datetime';
+import { vDateGuard } from '@/utils/dateGuard';
+import { INVALID_DATE_MESSAGE } from '@/utils/knowledgeRules';
 import type { ActivityItem } from '@/types/activity';
 
 // 活动管理(03-page-spec 4.5):title/startTime/endTime 必填,endTime ≥ startTime(DATETIME)
@@ -42,6 +45,7 @@ const form = reactive<ActivityForm>({
 
 function validateEnd(_rule: unknown, value: string, callback: (err?: Error) => void): void {
   if (!value) callback(new Error('结束时间不能为空'));
+  else if (!isDateTimeString(value)) callback(new Error(INVALID_DATE_MESSAGE));
   else if (form.startTime && value < form.startTime) callback(new Error('结束时间不能早于开始时间'));
   else callback();
 }
@@ -51,7 +55,16 @@ const rules: Record<string, FormItemRule[]> = {
     { required: true, message: '标题不能为空', trigger: 'blur' },
     { max: 100, message: '标题不能超过 100 字', trigger: 'blur' }
   ],
-  startTime: [{ required: true, message: '开始时间不能为空', trigger: 'change' }],
+  startTime: [
+    { required: true, message: '开始时间不能为空', trigger: 'change' },
+    {
+      validator: (_rule: unknown, value: string, callback: (err?: Error) => void) => {
+        if (!value || isDateTimeString(value)) callback();
+        else callback(new Error(INVALID_DATE_MESSAGE));
+      },
+      trigger: 'change'
+    }
+  ],
   endTime: [{ required: true, validator: validateEnd, trigger: 'change' }],
   signupMethod: [{ max: 200, message: '报名方式不能超过 200 字', trigger: 'blur' }],
   targetAudience: [{ max: 200, message: '适用对象不能超过 200 字', trigger: 'blur' }]
@@ -107,6 +120,11 @@ async function openEdit(row: ActivityItem): Promise<void> {
 async function onSave(): Promise<void> {
   const valid = await formRef.value?.validate().catch(() => false);
   if (!valid) return;
+  // 提交前真实日历兜底校验(GUI 验收 D-MED-2):DATETIME 的日期部分须真实存在
+  if (!isDateTimeString(form.startTime) || !isDateTimeString(form.endTime)) {
+    ElMessage.error(INVALID_DATE_MESSAGE);
+    return;
+  }
   saving.value = true;
   try {
     const payload = {
@@ -275,6 +293,7 @@ onMounted(async () => {
         >
           <el-date-picker
             v-model="form.startTime"
+            v-date-guard
             type="datetime"
             value-format="YYYY-MM-DD HH:mm:ss"
             placeholder="YYYY-MM-DD HH:mm:ss"
@@ -286,6 +305,7 @@ onMounted(async () => {
         >
           <el-date-picker
             v-model="form.endTime"
+            v-date-guard
             type="datetime"
             value-format="YYYY-MM-DD HH:mm:ss"
             placeholder="不早于开始时间"

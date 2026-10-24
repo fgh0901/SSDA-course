@@ -64,9 +64,12 @@ describe('管理端知识表单校验规则(TC-08,与后端 zod 同口径)', () 
     expect(await runRules(fromRule, '2026-09-01')).toBeUndefined();
   });
 
-  it('有效期止:可空,填值时也须为 YYYY-MM-DD', async () => {
-    expect(await runRules(rules.effectiveUntil, '')).toBeUndefined();
-    expect(await runRules(rules.effectiveUntil, '2026-13-40')).toBe('日期格式应为 YYYY-MM-DD');
+  it('日期语义校验:日历上不存在的日期提示"日期不合法,请选择真实存在的日期"(GUI 验收 D-MED-2)', async () => {
+    const fromRule = rules.effectiveFrom;
+    expect(await runRules(fromRule, '2026-13-99')).toBe('日期不合法,请选择真实存在的日期');
+    expect(await runRules(fromRule, '2026-13-40')).toBe('日期不合法,请选择真实存在的日期');
+    expect(await runRules(fromRule, '2026-02-30')).toBe('日期不合法,请选择真实存在的日期');
+    expect(await runRules(rules.effectiveUntil, '2026-13-40')).toBe('日期不合法,请选择真实存在的日期');
     expect(await runRules(rules.effectiveUntil, '2027-07-15')).toBeUndefined();
   });
 

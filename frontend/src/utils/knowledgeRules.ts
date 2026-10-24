@@ -1,6 +1,10 @@
 import type { FormItemRule } from 'element-plus';
 import { isDateString } from './datetime';
 
+// 与格式校验区分:格式对但日历上不存在的日期(如 2026-13-99)单独提示(GUI 验收 D-MED-2)
+export const INVALID_DATE_MESSAGE = '日期不合法,请选择真实存在的日期';
+const DATE_FORMAT_RE = /^\d{4}-\d{2}-\d{2}$/;
+
 // 知识表单模型(契约 3.4/3.5 字段)
 export interface KnowledgeFormModel {
   title: string;
@@ -36,8 +40,10 @@ export function createKnowledgeRules(): Record<string, FormItemRule[]> {
       { required: true, message: '有效期起不能为空', trigger: 'change' },
       {
         validator: (_rule, value: string, callback: (err?: Error) => void) => {
-          if (!value || isDateString(value)) callback();
-          else callback(new Error('日期格式应为 YYYY-MM-DD'));
+          if (!value) callback();
+          else if (!DATE_FORMAT_RE.test(value)) callback(new Error('日期格式应为 YYYY-MM-DD'));
+          else if (!isDateString(value)) callback(new Error(INVALID_DATE_MESSAGE));
+          else callback();
         },
         trigger: 'change'
       }
@@ -46,7 +52,8 @@ export function createKnowledgeRules(): Record<string, FormItemRule[]> {
       {
         validator: (_rule, value: string, callback: (err?: Error) => void) => {
           if (!value) callback();
-          else if (!isDateString(value)) callback(new Error('日期格式应为 YYYY-MM-DD'));
+          else if (!DATE_FORMAT_RE.test(value)) callback(new Error('日期格式应为 YYYY-MM-DD'));
+          else if (!isDateString(value)) callback(new Error(INVALID_DATE_MESSAGE));
           else callback();
         },
         trigger: 'change'

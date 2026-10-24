@@ -15,6 +15,9 @@ import {
 } from '@/api/admin';
 import { useCategoryStore } from '@/stores/category';
 import StatusTag from '@/components/StatusTag.vue';
+import { isDateString } from '@/utils/datetime';
+import { vDateGuard } from '@/utils/dateGuard';
+import { INVALID_DATE_MESSAGE } from '@/utils/knowledgeRules';
 import type { KnowledgeChangeLog, KnowledgeItem } from '@/types/knowledge';
 import type { KnowledgeStatus } from '@/types/api';
 import {
@@ -106,6 +109,11 @@ async function onSave(): Promise<void> {
   const rangeError = validateDateRange(form);
   if (rangeError) {
     ElMessage.error(rangeError);
+    return;
+  }
+  // 提交前真实日历兜底校验(GUI 验收 D-MED-2):model 值须为真实存在的日期
+  if ((form.effectiveFrom && !isDateString(form.effectiveFrom)) || (form.effectiveUntil && !isDateString(form.effectiveUntil))) {
+    ElMessage.error(INVALID_DATE_MESSAGE);
     return;
   }
   saving.value = true;
@@ -471,6 +479,7 @@ onMounted(async () => {
         >
           <el-date-picker
             v-model="form.effectiveFrom"
+            v-date-guard
             type="date"
             value-format="YYYY-MM-DD"
             placeholder="YYYY-MM-DD"
@@ -482,6 +491,7 @@ onMounted(async () => {
         >
           <el-date-picker
             v-model="form.effectiveUntil"
+            v-date-guard
             type="date"
             value-format="YYYY-MM-DD"
             placeholder="可选,不早于有效期起"

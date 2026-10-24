@@ -11,7 +11,9 @@ export function isDateString(v: unknown): boolean {
 }
 
 export function isDateTimeString(v: unknown): boolean {
-  return typeof v === 'string' && DATETIME_RE.test(v);
+  if (typeof v !== 'string' || !DATETIME_RE.test(v)) return false;
+  // 语义校验:日期部分须为真实存在的日期(如 2026-13-99 10:00:00 视为非法)
+  return isDateString(v.slice(0, 10));
 }
 
 /** 该日期(YYYY-MM-DD)是否已过今天(客户端仅做列表展示;详情页以服务端 isExpired 为准) */
