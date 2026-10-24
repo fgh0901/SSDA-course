@@ -21,7 +21,8 @@ frontend/src/
 ├── api/            # 按模块拆分的接口函数 + axios 实例(http.ts)
 ├── views/          # 页面级组件
 │   ├── student/    # HomeView、KnowledgeListView、KnowledgeDetailView、
-│   │               # ServiceListView、ActivityListView、LocationView、
+│   │               # ServiceListView、ServiceDetailView、ActivityListView、
+│   │               # ActivityDetailView、LocationView、
 │   │               # CourseTeacherView、SearchResultView、AiChatView
 │   └── admin/      # LoginView、KnowledgeManageView、CategoryManageView、
 │                   # ServiceManageView、ActivityManageView、LocationManageView、

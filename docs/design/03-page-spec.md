@@ -1,0 +1,185 @@
+# SSDA 页面规格(03-page-spec)
+
+> 版本 v1.0(2026-10-24)。路由、字段、分页默认值与 `api-contract.md` v1.0 一致;前端实现规范见 ssda-frontend skill;页面清单对应简报第 6 节。管理端页面统称"管理端",路由守卫仅做体验优化,权限以服务端 401/403 为准(TC-07)。
+
+## 1. 路由表
+
+### 1.1 学生端(布局 StudentLayout:顶部导航 + AI 悬浮入口 + 页脚)
+
+| 路由 | 视图组件 | 说明 | 守卫 |
+|---|---|---|---|
+| `/` | HomeView | 首页:搜索框 + 分类导航 + 最新知识 | 公开 |
+| `/knowledge` | KnowledgeListView | 知识列表:分类筛选 + 关键词 + 分页 + 状态标签 | 公开 |
+| `/knowledge/:id` | KnowledgeDetailView | 知识详情:来源/更新时间/状态/过期横幅 | 公开 |
+| `/services` | ServiceListView | 办事指南列表 | 公开 |
+| `/services/:id` | ServiceDetailView | 办事指南详情 | 公开 |
+| `/activities` | ActivityListView | 活动列表(进行中/即将开始/往期) | 公开 |
+| `/activities/:id` | ActivityDetailView | 活动详情 | 公开 |
+| `/locations` | LocationView | 地点查询 | 公开 |
+| `/courses-teachers` | CourseTeacherView | 课程教师查询(双 Tab) | 公开 |
+| `/search` | SearchResultView | 聚合搜索结果页(类型筛选) | 公开(query 缺 keyword 时引导输入) |
+| `/ai-chat` | AiChatView | AI 助手对话页 | 公开 |
+
+### 1.2 管理端(布局 AdminLayout:侧边菜单,统一挂 `/admin`)
+
+| 路由 | 视图组件 | 说明 | 守卫 |
+|---|---|---|---|
+| `/admin/login` | LoginView | 登录页 | 已登录访问则跳 `/admin/knowledge` |
+| `/admin` | —(路由重定向) | 重定向到 `/admin/knowledge` | 需登录 |
+| `/admin/knowledge` | KnowledgeManageView | 知识管理:列表(全状态筛选)+ 新增/编辑表单 + 审核/上下架 + 变更日志抽屉 | 需登录 |
+| `/admin/categories` | CategoryManageView | 分类管理 | 需登录 |
+| `/admin/services` | ServiceManageView | 办事指南管理 | 需登录 |
+| `/admin/activities` | ActivityManageView | 活动管理 | 需登录 |
+| `/admin/locations` | LocationManageView | 地点管理 | 需登录 |
+| `/admin/courses-teachers` | CourseTeacherManageView | 课程与教师管理(双 Tab + 任教关系维护) | 需登录 |
+| `/admin/expired` | ExpiredWorkbenchView | 过期信息工作台 | 需登录 |
+| `/admin/ai-logs` | AiLogView | AI 对话记录查看 + 导出 | 需登录 |
+
+守卫实现(router/index.ts 全局前置守卫):`to.path` 以 `/admin` 开头且非 `/admin/login` 且无 token(`useAuthStore`)→ 重定向 `/admin/login?redirect=<fullPath>`;响应拦截器收到 401 清 token 跳登录,403 提示"无权限"(TC-07)。
+
+## 2. 全局组件
+
+| 组件 | 位置 | 行为 |
+|---|---|---|
+| StudentLayout / AdminLayout | components/layout | 学生端顶部导航(首页/知识/办事指南/活动/地点/课程教师/AI 助手);管理端侧边菜单 + 退出登录 |
+| AiFloatEntry | components | 全局悬浮按钮(学生端所有页面),点击进入 `/ai-chat`;未读无红点(无推送) |
+| KnowledgeCard | components | 列表卡片:标题、分类摘要(summary)、`待核实`标签(isVerified=0)、过期标识(isExpired)、更新时间 |
+| StatusTag | components | `draft=草稿(info)/pending_review=待审核(warning)/published=已发布(success)/takedown=已下架(danger)` |
+| ExpiredBanner | components | 详情页顶部过期横幅:"该信息已过有效期(YYYY-MM-DD),仅供参考,请以官方通知核实" |
+| SearchBar | components | 首页与搜索页复用;空关键词前端拦截提示(不发请求) |
+| PageFooter | components | 页脚固定文案:"数据来源:校信息化办公室、后勤服务中心等官方渠道;更新时间以各条目标注为准;AI 回答仅供参考,请核实。" |
+
+## 3. 学生端页面规格
+
+### 3.1 HomeView(/)
+
+- 目标:新生快速入口(P01)。
+- API:`GET /api/categories`、`GET /api/knowledge?pageSize=8`(最新)、`GET /api/search`(顶部搜索跳转 `/search?keyword=`)。
+- 交互:分类卡片点击 → `/knowledge?categoryId=`;搜索框回车 → `/search?keyword=`。
+- 状态:分类为空 → 空状态"暂无分类";接口异常 → 统一错误提示(不含堆栈)。
+
+### 3.2 KnowledgeListView(/knowledge)
+
+- 目标:FR-01/02/10,分类浏览 + 检索。
+- API:`GET /api/knowledge`(page/pageSize/keyword/categoryId)、`GET /api/categories`。
+- 关键交互:关键词搜索(空关键词 → 提示"请输入关键词"并展示默认列表,TC-02)、分类筛选(单选,可清除)、el-pagination(page/pageSize=10);`?categoryId=` query 同步 URL,可分享回跳。
+- 状态规则:列表项标题旁展示"待核实"标签(isVerified=0)与过期标识(isExpired,如"已过期"灰色 tag);无结果 → `el-empty "未找到相关结果,换个关键词试试"`(TC-03)。
+
+### 3.3 KnowledgeDetailView(/knowledge/:id)
+
+- 目标:FR-03/10/11。
+- API:`GET /api/knowledge/:id`。
+- 展示规则(TC-04/TC-09):正文、来源(source)、更新时间(updatedAt)、状态标签;"待核实"标签(isVerified=0);`isExpired=true` → 顶部 ExpiredBanner;404(不存在/未发布/已下架)→ 展示"内容不存在或已下架"页并提供返回列表入口。
+- 交互:404 与 400 均渲染友好页;正文纯文本渲染,**禁止 v-html**。
+
+### 3.4 ServiceListView(/services)与 ServiceDetailView(/services/:id)
+
+- 目标:FR-04。
+- API:`GET /api/services`(keyword/locationId/分页)、`GET /api/services/:id`。
+- 列表交互:关键词搜索(空提示,TC-02)、地点下拉筛选(来自 `GET /api/locations?pageSize=100`)、分页;详情展示部门、办理地点(可跳 `/locations`)、办理时间、所需材料、办理流程。
+- 空状态:同 3.2 口径(TC-03)。
+
+### 3.5 ActivityListView(/activities)与 ActivityDetailView(/activities/:id)
+
+- 目标:FR-06。
+- API:`GET /api/activities`(keyword/time/分页)、`GET /api/activities/:id`。
+- 交互:Tab 切换 `time=upcoming|past|全部`;详情展示时间、地点、报名方式、适用对象(TC-04 详情口径)。
+
+### 3.6 LocationView(/locations)
+
+- 目标:M05。
+- API:`GET /api/locations`(keyword/campus/building/floor/分页)。
+- 交互:关键词 + 校区/建筑/楼层级联下拉筛选;列表列:名称、校区、建筑、楼层、房间。
+
+### 3.7 CourseTeacherView(/courses-teachers)
+
+- 目标:FR-05/P03(双 Tab)。
+- API:课程 Tab `GET /api/courses`(keyword/semester)、教师 Tab `GET /api/teachers`(keyword);点击行打开详情抽屉 `GET /api/courses/:id` 或 `GET /api/teachers/:id`。
+- 展示规则:课程抽屉列任教教师、上课时间(schedule)、上课地点(可跳地点页)、教师办公室与答疑时间;**关系未录入显示"暂无任课信息,以教务系统课表为准",不做推断**(P03 红线)。
+
+### 3.8 SearchResultView(/search)
+
+- 目标:FR-02/04/05/06,M07 聚合。
+- API:`GET /api/search?keyword=&type=`。
+- 交互:顶部搜索框可改词重搜;type 多选筛选(knowledge/service/activity/course/teacher/location);每组显示"共 N 条"与"查看更多"(置该 type 并回 `/knowledge` 等对应列表页);空结果统一 `el-empty`(TC-01/02/03)。
+
+### 3.9 AiChatView(/ai-chat)
+
+- 目标:FR-13。
+- API:`POST /api/ai/chat`。
+- 交互:消息气泡列表;发送按钮 loading 防重复;回答下方渲染来源列表(type+title,可点击跳对应详情路由);`mode=fallback` → 回答顶部提示条"当前为降级模式,回答由本地知识库检索直接整理";`sources=[]` → 显示"知识库未覆盖,请核实"类回答原样展示。
+- 会话:首次进入生成 `crypto.randomUUID()` 存 `localStorage.ssda_ai_session_id` 持久复用;**不收集任何身份信息**;历史消息仅本次浏览器内存展示(本期不做服务端历史回放)。
+- 错误:400 展示 error.message(如"问题长度须为 1~500 字");500 展示"系统繁忙,请稍后重试"。
+
+## 4. 管理端页面规格
+
+### 4.1 LoginView(/admin/login)
+
+- API:`POST /api/admin/auth/login`。
+- 交互:el-form 校验(账号 3~30 字、密码 6~64 字)→ 登录成功存 token(`ssda_token`)与 username → 跳 redirect 参数或 `/admin/knowledge`;401 → 表单级错误"用户名或密码错误"。
+
+### 4.2 KnowledgeManageView(/admin/knowledge)
+
+- 目标:FR-08/09/10/11,M09。
+- API:列表 `GET /api/admin/knowledge`(keyword/categoryId/status 多选/isVerified)、详情 `GET /api/admin/knowledge/:id`、新增 `POST`、编辑 `PUT`、删除 `DELETE`、提审 `POST /:id/submit-review`、审核 `POST /:id/review`、下架 `POST /:id/takedown`、日志抽屉 `GET /:id/change-logs`。
+- 列表:全状态筛选(默认全部)、状态 StatusTag、操作列按状态启用(草稿:编辑/提审/删除;待审核:审核/编辑;已发布:下架/编辑;已下架:编辑/提审);409 冲突(如删除非草稿)展示后端 message。
+- 新增/编辑表单校验规则(TC-08,与后端 zod 同口径):
+
+| 字段 | 必填 | 校验 | 失败文案 |
+|---|---|---|---|
+| title | 是 | 1~100 字 | "标题不能为空"/"标题不能超过 100 字" |
+| categoryId | 是 | 下拉必选(仅启用分类) | "分类不能为空" |
+| content | 是 | 1~20000 字 | "正文不能为空" |
+| source | 是 | 1~200 字 | "来源不能为空" |
+| effectiveFrom | 是 | 日期选择器,格式 YYYY-MM-DD | "日期格式应为 YYYY-MM-DD" |
+| effectiveUntil | 否 | ≥ effectiveFrom | "有效期止不能早于有效期起" |
+| isVerified | 否 | 开关,默认待核实 | — |
+
+- 审核对话框:`action=reject` 时 comment 必填(1~200 字);提交后刷新列表。
+- 变更日志抽屉:时间线展示 action/操作人/摘要/时间。
+
+### 4.3 ExpiredWorkbenchView(/admin/expired)
+
+- 目标:FR-10/M10,P05。
+- API:`GET /api/admin/knowledge/expired?state=&days=7`。
+- 交互:Tab"已过期 / 7 天内临期";行操作:核实更新(跳编辑)、下架(takedown,确认框);每行展示 effectiveUntil、daysOverdue/state、updatedAt。
+- 规则:页面明确提示"系统仅按有效期识别,处理结果以人工核实为准"(P05 红线);下架成功后学生端即时不可见(TC-09)。
+
+### 4.4 CategoryManageView(/admin/categories)
+
+- API:`GET/POST/PUT/DELETE /api/admin/categories`。
+- 表单:name 必填 1~50 字(400"分类名称已存在"原样展示)、sortOrder 整数、isEnabled 开关。
+- 删除:仍有关联知识 → 409 message(含条数)原样提示;列表展示 knowledgeCount 提前预警。
+
+### 4.5 ServiceManageView(/admin/services)与 ActivityManageView(/admin/activities)
+
+- API:对应 `/api/admin/services`、`/api/admin/activities` CRUD。
+- 表单校验:指南 title/department 必填(1~100),locationId 下拉可选;活动 title/startTime/endTime 必填且 endTime ≥ startTime(DATETIME 选择器),signupMethod/targetAudience ≤200。
+- 列表 isEnabled 开关即上下架。
+
+### 4.6 LocationManageView(/admin/locations)
+
+- API:`/api/admin/locations` CRUD;name/campus 必填;删除 409(被引用)提示含引用数。
+
+### 4.7 CourseTeacherManageView(/admin/courses-teachers)
+
+- API:`/api/admin/courses`、`/api/admin/teachers` CRUD + `GET/POST/DELETE /api/admin/courses/:id/teachers`。
+- 交互:课程 Tab 行展开/抽屉维护任教关系(选教师、选上课地点、填 schedule);重复关联 409"该教师已关联此课程";teacher 表单仅含姓名/职称/办公室/答疑时间字段(契约 strict 校验,多余字段 400)。
+
+### 4.8 AiLogView(/admin/ai-logs)
+
+- 目标:FR-13 审计。
+- API:`GET /api/admin/ai-logs`(sessionKey/startDate/endDate/分页)、`?export=1` 下载 JSONL。
+- 交互:按会话折叠展示 user/assistant 消息;assistant 消息展示 mode 标签(deepseek/fallback)、来源列表、latencyMs;导出按钮触发文件下载;页面提示"导出文件含对话原文,提交前需脱敏,不入 git"。
+
+## 5. 状态展示规则汇总(全端统一口径)
+
+| 数据状态 | 学生端 | 管理端 |
+|---|---|---|
+| published 且在有效期内 | 正常展示 | StatusTag success |
+| published 且过有效期 | 正常返回 + 过期标识/横幅,"仅供参考,请核实"(TC-09) | StatusTag success + 过期提示;出现在过期工作台 |
+| pending_review | 不可见(列表不含) | StatusTag warning,可审核 |
+| draft | 不可见 | StatusTag info,可编辑/提审/删除 |
+| takedown | 不可见(详情 404,"隐藏已下架内容") | StatusTag danger,可编辑后重新提审 |
+| isVerified=0 | "待核实"标签,不自动标真实有效 | 开关可切换 |
+| 数据库不可用 | 全站统一"系统繁忙,请稍后重试",无堆栈(TC-10) | 同左 |

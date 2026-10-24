@@ -12,7 +12,7 @@ const envSchema = z.object({
   DB_NAME: z.string().default('ssda'),
 
   JWT_SECRET: z.string().min(16).default('ssda-dev-secret-change-me-please'),
-  JWT_EXPIRES_IN: z.string().default('8h'),
+  JWT_EXPIRES_IN: z.string().default('12h'),
 
   // AI 生成(DeepSeek,OpenAI 兼容;未配置 Key 时 ChatService 自动降级)
   DEEPSEEK_API_KEY: z.string().optional(),

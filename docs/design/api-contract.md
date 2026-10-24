@@ -1,0 +1,775 @@
+# SSDA API 契约 v1.0
+
+> 本文件是前后端接口的唯一契约。实现与对接前必须逐字对照本文;与 `00-project-brief.md` 冲突时以简报为准并上报总控。
+> 契约状态:**v1.0 已提交总控评审,评审通过即冻结**。冻结后任何新增/变更走登记流程(提案 → 总控裁决 → 修订版本号 → 前后端同步),禁止"边写代码边定接口"。
+
+## 0. 版本记录
+
+| 版本 | 日期 | 变更内容 | 状态 |
+|---|---|---|---|
+| v1.0 | 2026-10-24 | Phase 1 首版:覆盖简报第 5 节全部接口;补充 6 个端点(见 0.1);新增 409 错误码与 AI 对话接口专节;附接口↔FR↔M↔TC 追溯矩阵 | 待总控评审冻结 |
+
+### 0.1 相对简报第 5 节的补充端点(只增不删)
+
+| 补充端点 | 补充理由 | 关联 |
+|---|---|---|
+| GET /api/courses/:id | 课程详情(含任教教师与上课地点),支撑 P03 关联查询 | FR-05 |
+| GET /api/teachers/:id | 教师详情(含任教课程与答疑时间),支撑 P03 关联查询 | FR-05 |
+| GET /api/admin/knowledge/:id | 编辑表单回显需单条详情(管理端) | FR-08 |
+| POST /api/admin/courses/:id/teachers | 维护课程-教师任教关系(M06 涉及 course_teacher 表) | FR-05 |
+| DELETE /api/admin/courses/:id/teachers/:relationId | 删除任教关系 | FR-05 |
+| GET /api/admin/courses/:id/teachers | 查询任教关系 | FR-05 |
+
+---
+
+## 1. 全局规范(冻结)
+
+### 1.1 响应包
+
+成功(所有接口,无一例外):
+
+```json
+{ "success": true, "data": { } }
+```
+
+失败:
+
+```json
+{ "success": false, "error": { "code": "VALIDATION_ERROR", "message": "标题不能为空" } }
+```
+
+- `error.code` 为大写蛇形;`error.message` 为可直接展示给用户的中文。
+- 失败响应**不得**包含堆栈、SQL、连接串、密钥;500 统一返回 `"系统繁忙,请稍后重试"`,详情仅写服务端日志(TC-10)。
+- 例外:`GET /api/admin/ai-logs?export=1` 返回 JSONL 文件流(见 4.12)。
+
+### 1.2 分页规范
+
+- 请求:`page`(从 1 开始,默认 1)、`pageSize`(默认 10,上限 100);筛选参数见各接口。
+- 响应:`data = { list, total, page, pageSize }`。
+- 列表类接口必须分页,禁止一次返回全表。**唯一例外**:`GET /api/categories`(导航字典,数据量 ≤20 条,返回 `{ list }` 全量),已作为契约决策登记,如总控有异议按登记流程修订。
+
+### 1.3 字段与路径命名
+
+- JSON 字段与 query 参数:**camelCase**(`categoryId`、`pageSize`);数据库列名 snake_case,仅在 DAO 层出现并就地映射。
+- 路径:资源名词复数(`/api/knowledge`),详情 `/:id`,多词段 kebab-case(`/api/admin/knowledge/12/change-logs`),管理接口统一 `/api/admin` 前缀 + JWT。
+- 动作型端点仅用于审核/上下架/登录/AI 对话等动词场景。
+
+### 1.4 时间与日期格式
+
+- 日期(DATE):`YYYY-MM-DD`,如 `2026-09-01`。
+- 日期时间(DATETIME):`YYYY-MM-DD HH:mm:ss`(东八区),如 `2026-09-18 10:23:45`。
+
+### 1.5 错误码表(冻结)
+
+| HTTP | code | 语义 | 典型场景 |
+|---|---|---|---|
+| 400 | `VALIDATION_ERROR` | 参数错误,message 含具体字段 | 缺标题、日期格式非法(TC-08)、空关键词 |
+| 401 | `UNAUTHORIZED` | 未登录 / token 缺失或无效 | 管理接口未带 token、登录密码错误(TC-07) |
+| 403 | `FORBIDDEN` | 已登录但角色未授权 | 非管理员角色调管理接口(TC-07) |
+| 404 | `NOT_FOUND` | 资源不存在 | `/api/knowledge/999`;学生端访问已下架知识 |
+| 409 | `CONFLICT` | 业务状态冲突 | 删除仍有关联知识的分类;删除非草稿知识 |
+| 500 | `INTERNAL_ERROR` | 服务器异常,统一"系统繁忙,请稍后重试" | 数据库不可用(TC-10) |
+
+### 1.6 鉴权约定
+
+- 管理接口请求头:`Authorization: Bearer <token>`;token 由 `POST /api/admin/auth/login` 签发(JWT,payload 含 `adminId/username/role`,有效期 12h)。
+- `/api/admin/*` 全部挂 `requireAuth + requireRole('admin')`,服务端强制校验,前端隐藏入口不算权限控制(TC-07)。
+
+---
+
+## 2. 公开接口(无需登录)
+
+### 2.1 GET /api/health
+
+- 权限:公开。说明:健康检查与部署自检;同时探测数据库连通性(不抛出内部细节)。
+- query:无。
+- 成功响应:
+
+```json
+{ "success": true, "data": { "status": "ok", "db": "up", "time": "2026-10-24 16:50:00" } }
+```
+
+- 错误分支:数据库不可用时仍返回 200,`db: "down"`(供运维判断;业务接口此时返回 500/INTERNAL_ERROR,TC-10)。
+
+### 2.2 GET /api/categories
+
+- 权限:公开。说明:启用中的知识分类字典(全量,见 1.2 例外),按 `sortOrder` 升序。
+- query:无。
+- 成功响应:
+
+```json
+{
+  "success": true,
+  "data": {
+    "list": [
+      { "id": 1, "name": "入学事务", "description": "报到、校园卡、宿舍等入学常见事项", "sortOrder": 1, "isEnabled": 1 },
+      { "id": 2, "name": "教学教务", "description": "选课、考试、成绩等教学事项", "sortOrder": 2, "isEnabled": 1 },
+      { "id": 3, "name": "校园生活", "description": "食堂、社团、运动场所", "sortOrder": 3, "isEnabled": 1 }
+    ]
+  }
+}
+```
+
+- 错误分支:500。
+
+### 2.3 GET /api/knowledge
+
+- 权限:公开。说明:学生端知识列表,**仅返回 `status='published'` 的知识**(含已过期项,前端按有效期展示过期标识,TC-09);支持关键词与分类筛选。
+- query:
+
+| 名称 | 类型 | 必填 | 约束 |
+|---|---|---|---|
+| keyword | string | 否 | 去空格后 ≤50 字符;为空/缺省=不加关键词条件(TC-02) |
+| categoryId | number | 否 | 正整数,必须为存在且启用的分类 id |
+| page | number | 否 | ≥1,默认 1 |
+| pageSize | number | 否 | 1~100,默认 10 |
+
+- 成功响应:
+
+```json
+{
+  "success": true,
+  "data": {
+    "list": [
+      {
+        "id": 12,
+        "title": "校园卡遗失补办流程",
+        "categoryId": 1,
+        "categoryName": "入学事务",
+        "summary": "校园卡遗失后,携带本人身份证到一卡通服务中心办理补办,工本费 20 元,当场可取…",
+        "source": "校信息化办公室官网",
+        "isVerified": 1,
+        "effectiveFrom": "2026-08-20",
+        "effectiveUntil": "2027-08-31",
+        "updatedAt": "2026-09-18 10:23:45"
+      }
+    ],
+    "total": 42,
+    "page": 1,
+    "pageSize": 10
+  }
+}
+```
+
+- 字段说明:`summary` 为正文去 HTML 前缀截取 ≤80 字;`isVerified` 1=已核实,0=待核实(前端显示"待核实"标签)。
+- 错误分支:400(分页参数非法);500。
+
+### 2.4 GET /api/knowledge/:id
+
+- 权限:公开。说明:知识详情。**仅 `published` 可见**;draft/pending_review 返回 404(学生端不可见),`takedown` 返回 404(已下架不可见,TC-09)。
+- 路径参数:id(正整数)。
+- 成功响应:
+
+```json
+{
+  "success": true,
+  "data": {
+    "id": 12,
+    "title": "校园卡遗失补办流程",
+    "categoryId": 1,
+    "categoryName": "入学事务",
+    "content": "一、挂失:登录校园卡自助服务平台或到一卡通服务中心办理挂失;\n二、补办:携带本人身份证到一卡通服务中心(行政楼 1 层 102 室)办理,工本费 20 元;\n三、旧卡余额在补办成功后 1 个工作日内自动转入新卡。",
+    "source": "校信息化办公室官网",
+    "status": "published",
+    "isVerified": 1,
+    "effectiveFrom": "2026-08-20",
+    "effectiveUntil": "2027-08-31",
+    "isExpired": false,
+    "createdAt": "2026-08-20 09:00:00",
+    "updatedAt": "2026-09-18 10:23:45"
+  }
+}
+```
+
+- `isExpired` 为服务端按 `effectiveUntil < 当前日期` 计算的布尔值(避免客户端时钟偏差);前端据此渲染过期横幅(TC-09)。
+- 错误分支:400(id 非法);404(NOT_FOUND,`"知识不存在或未发布"`);500。
+
+### 2.5 GET /api/services
+
+- 权限:公开。说明:办事指南列表(仅 `isEnabled=1`),按 `updatedAt` 倒序。
+- query:
+
+| 名称 | 类型 | 必填 | 约束 |
+|---|---|---|---|
+| keyword | string | 否 | ≤50 字符,匹配 title/department |
+| locationId | number | 否 | 按办理地点筛选 |
+| page / pageSize | number | 否 | 默认 1 / 10,上限 100 |
+
+- 成功响应:
+
+```json
+{
+  "success": true,
+  "data": {
+    "list": [
+      {
+        "id": 3,
+        "title": "水卡补办",
+        "department": "后勤服务中心",
+        "location": { "id": 5, "name": "后勤服务大厅", "building": "综合服务楼", "room": "1 层 108 室" },
+        "serviceTime": "工作日 8:30-17:00",
+        "updatedAt": "2026-09-10 14:00:00"
+      }
+    ],
+    "total": 8,
+    "page": 1,
+    "pageSize": 10
+  }
+}
+```
+
+- 错误分支:400;500。
+
+### 2.6 GET /api/services/:id
+
+- 权限:公开。说明:办事指南详情,含材料清单与办理流程全文。
+- 成功响应:
+
+```json
+{
+  "success": true,
+  "data": {
+    "id": 3,
+    "title": "水卡补办",
+    "department": "后勤服务中心",
+    "location": { "id": 5, "name": "后勤服务大厅", "campus": "主校区", "building": "综合服务楼", "floor": "1", "room": "108 室" },
+    "serviceTime": "工作日 8:30-17:00",
+    "materials": "1. 本人身份证;2. 学生证;3. 现金 10 元(工本费)",
+    "process": "1. 到综合服务楼 1 层取号;2. 窗口提交材料;3. 缴费领卡,即时开通。",
+    "isEnabled": 1,
+    "updatedAt": "2026-09-10 14:00:00"
+  }
+}
+```
+
+- 错误分支:404(NOT_FOUND,`"办事指南不存在或已停用"`);500。
+
+### 2.7 GET /api/activities
+
+- 权限:公开。说明:校园活动列表(仅 `isEnabled=1`),按 `startTime` 倒序。
+- query:keyword(≤50,匹配 title)、time(`upcoming` 未开始 / `past` 已结束 / 缺省全部)、page、pageSize。
+- 成功响应:
+
+```json
+{
+  "success": true,
+  "data": {
+    "list": [
+      {
+        "id": 6,
+        "title": "新生校园跑",
+        "startTime": "2026-11-05 16:00:00",
+        "endTime": "2026-11-05 18:00:00",
+        "location": { "id": 2, "name": "东区田径场" },
+        "signupMethod": "到梦空间 App 报名,截止 11-03",
+        "targetAudience": "2026 级本科新生",
+        "updatedAt": "2026-10-12 09:30:00"
+      }
+    ],
+    "total": 5,
+    "page": 1,
+    "pageSize": 10
+  }
+}
+```
+
+- 错误分支:400(time 取值非法);500。
+
+### 2.8 GET /api/activities/:id
+
+- 权限:公开。说明:活动详情,含报名方式与适用对象。
+- 错误分支:404;500。响应结构同 2.7 列表项 + `description`(正文)。
+
+### 2.9 GET /api/locations
+
+- 权限:公开。说明:地点查询(M05),支持校区/建筑/楼层/名称组合筛选,按 `campus, name` 排序。
+- query:
+
+| 名称 | 类型 | 必填 | 约束 |
+|---|---|---|---|
+| keyword | string | 否 | ≤50 字符,匹配 name |
+| campus | string | 否 | 精确匹配校区名 |
+| building | string | 否 | 精确匹配建筑名 |
+| floor | string | 否 | 精确匹配楼层 |
+| page / pageSize | number | 否 | 默认 1 / 10 |
+
+- 成功响应:
+
+```json
+{
+  "success": true,
+  "data": {
+    "list": [
+      { "id": 5, "name": "后勤服务大厅", "campus": "主校区", "building": "综合服务楼", "floor": "1", "room": "108 室", "description": "一卡通、水卡、报修等综合服务窗口" }
+    ],
+    "total": 23,
+    "page": 1,
+    "pageSize": 10
+  }
+}
+```
+
+- 错误分支:400;500。
+
+### 2.10 GET /api/courses
+
+- 权限:公开。说明:课程列表(含每门课的任教教师简要信息),按 `name` 升序。
+- query:keyword(≤50,匹配 name/code)、semester(如 `2026-2027-1`)、page、pageSize。
+- 成功响应:
+
+```json
+{
+  "success": true,
+  "data": {
+    "list": [
+      {
+        "id": 101,
+        "name": "高等数学 A(上)",
+        "code": "MATH101",
+        "semester": "2026-2027-1",
+        "teachers": [ { "id": 7, "name": "张明" } ]
+      }
+    ],
+    "total": 36,
+    "page": 1,
+    "pageSize": 10
+  }
+}
+```
+
+- 错误分支:400;500。
+
+### 2.11 GET /api/courses/:id
+
+- 权限:公开。说明:课程详情,含任教关系(教师、上课时间、上课地点)。**未录入的任教关系返回空数组,不做推断**(P03 红线)。
+- 成功响应:
+
+```json
+{
+  "success": true,
+  "data": {
+    "id": 101,
+    "name": "高等数学 A(上)",
+    "code": "MATH101",
+    "semester": "2026-2027-1",
+    "description": "面向 2026 级工科专业的高等数学基础课。",
+    "teachers": [
+      { "relationId": 9, "teacherId": 7, "name": "张明", "title": "副教授", "schedule": "周一 3-4 节;周三 1-2 节", "location": { "id": 8, "name": "第一教学楼 A101" }, "office": { "id": 11, "name": "理学楼 302" }, "officeHours": "周三 14:00-16:00" }
+    ]
+  }
+}
+```
+
+- 错误分支:404;500。
+
+### 2.12 GET /api/teachers
+
+- 权限:公开。说明:教师列表(**仅公开字段:姓名、职称、办公室、答疑时间**,不存不返回电话/工号等隐私字段),按 `name` 升序。
+- query:keyword(≤50,匹配 name)、page、pageSize。
+- 成功响应:
+
+```json
+{
+  "success": true,
+  "data": {
+    "list": [
+      { "id": 7, "name": "张明", "title": "副教授", "office": { "id": 11, "name": "理学楼 302" }, "officeHours": "周三 14:00-16:00", "courses": [ { "id": 101, "name": "高等数学 A(上)" } ] }
+    ],
+    "total": 18,
+    "page": 1,
+    "pageSize": 10
+  }
+}
+```
+
+- 错误分支:400;500。
+
+### 2.13 GET /api/teachers/:id
+
+- 权限:公开。说明:教师详情,含全部任教课程(课程、上课时间、地点)。未录入关系返回空数组,不做推断。
+- 错误分支:404;500。响应结构同 2.12 列表项 + `courses[]` 含 `schedule/location`。
+
+### 2.14 GET /api/search(聚合搜索)
+
+- 权限:公开。说明:M07 聚合搜索,同时检索知识、办事指南、活动、课程、教师、地点六类资源,结果**按类型分组**返回;支持 `type` 筛选。
+- query:
+
+| 名称 | 类型 | 必填 | 约束 |
+|---|---|---|---|
+| keyword | string | 是 | 去空格后 1~50 字符;空/超长返回 400(前端同时做前置拦截,TC-02) |
+| type | string | 否 | 逗号分隔,取值 `knowledge,service,activity,course,teacher,location`;缺省=全部六类 |
+| page | number | 否 | 每类返回的页码,默认 1 |
+| pageSize | number | 否 | 每类返回条数,默认 10,上限 100 |
+
+- 成功响应(每组 items 为该类的第 `page` 页,`total` 为该类命中总数,供前端显示"查看更多"):
+
+```json
+{
+  "success": true,
+  "data": {
+    "keyword": "校园卡",
+    "groups": [
+      {
+        "type": "knowledge",
+        "total": 4,
+        "items": [
+          { "id": 12, "title": "校园卡遗失补办流程", "summary": "携带本人身份证到一卡通服务中心办理补办…", "updatedAt": "2026-09-18 10:23:45" }
+        ]
+      },
+      {
+        "type": "service",
+        "total": 1,
+        "items": [
+          { "id": 3, "title": "水卡补办", "summary": "后勤服务中心 · 综合服务楼 1 层 108 室", "updatedAt": "2026-09-10 14:00:00" }
+        ]
+      }
+    ]
+  }
+}
+```
+
+- 无命中类型不出现在 `groups` 中(空结果由前端统一展示"未找到相关结果"文案,TC-03)。
+- 错误分支:400(keyword 缺失/超长、type 取值非法);500。
+
+### 2.15 POST /api/ai/chat
+
+- 权限:公开(匿名 sessionId,**不收集任何个人身份信息**,FR-13 合规红线)。
+- 说明:AI 问答。链路与降级规则见 `02-ai-component-design.md`;本节只定义契约。
+- 请求 body:
+
+| 名称 | 类型 | 必填 | 约束 |
+|---|---|---|---|
+| sessionId | string | 是 | UUID v4 格式;由前端生成并持久化(见 5.2) |
+| message | string | 是 | 去空格后 1~500 字符 |
+
+```json
+{ "sessionId": "9b6f0c1e-5d3a-4a2b-8e9f-1c2d3e4f5a6b", "message": "校园卡丢了怎么补办?" }
+```
+
+- 成功响应:
+
+```json
+{
+  "success": true,
+  "data": {
+    "answer": "校园卡遗失后请按以下步骤办理:1. 先到一卡通服务中心挂失;2. 携带本人身份证到一卡通服务中心(综合服务楼 1 层)补办,工本费 20 元。\n\n来源:\n[1] 校园卡遗失补办流程(更新于 2026-09-18)",
+    "sources": [
+      { "type": "knowledge", "id": 12, "title": "校园卡遗失补办流程", "source": "校信息化办公室官网", "updatedAt": "2026-09-18 10:23:45" }
+    ],
+    "mode": "deepseek",
+    "retriever": "local_kb"
+  }
+}
+```
+
+- 字段说明:
+  - `answer`:回答正文,末尾附来源编号列表(可解释性)。
+  - `sources`:引用的知识条目数组;`type` ∈ `knowledge,service,activity,course,teacher,location`;`source` 为该条目的原始来源(来源必填约束)。
+  - `mode`:`deepseek`=LLM 生成;`fallback`=降级模板(检索结果模板化组织,明确提示"当前为降级模式")。前端在 `fallback` 时展示降级提示条。
+  - `retriever`:当前版本固定 `local_kb`(预留 `http_kb`,见 02 设计文档)。
+  - 检索不到可信内容时:返回 200,`mode` 为实际模式,`answer` 为"知识库未覆盖该问题,请咨询相关部门核实"话术,`sources` 为空数组(**禁止编造**)。
+- 请求与会话内容落库 `ai_chat_session` / `ai_chat_message`(轨道①日志,见 02 设计文档第 6 节)。
+- 错误分支:400(sessionId 非 UUID、message 为空/超 500 字);500(INTERNAL_ERROR;LLM 异常**不**返回 500,走降级)。
+
+---
+
+## 3. 管理接口(JWT 保护,统一前缀 /api/admin)
+
+> 除 login 外全部要求 `Authorization: Bearer <token>` 且 `role='admin'`;缺 token/无效 → 401,角色不符 → 403(TC-07)。
+
+### 3.1 POST /api/admin/auth/login
+
+- 说明:管理员登录;密码 `bcryptjs` 校验;响应不回传密码哈希。
+- body:
+
+| 名称 | 类型 | 必填 | 约束 |
+|---|---|---|---|
+| username | string | 是 | 3~30 字符 |
+| password | string | 是 | 6~64 字符 |
+
+- 成功响应:
+
+```json
+{ "success": true, "data": { "token": "eyJhbGciOiJIUzI1NiIs...", "admin": { "id": 1, "username": "admin", "role": "admin" } } }
+```
+
+- 错误分支:400(字段缺失);401(`"用户名或密码错误"`,不区分账号不存在与密码错误);500。
+
+### 3.2 GET /api/admin/knowledge
+
+- 说明:管理端知识列表,**支持按任意状态筛选,缺省返回全部状态**(与学生端 2.3 不同),按 `updatedAt` 倒序。
+- query:keyword(≤50,匹配 title)、categoryId、status(`draft|pending_review|published|takedown`,可多值逗号分隔)、isVerified(`0|1`)、page、pageSize。
+- 成功响应:结构同 2.3,`list` 项额外含 `status`(原样返回四态)。
+- 错误分支:400(status 取值非法);401;403;500。
+
+### 3.3 GET /api/admin/knowledge/:id 【补充】
+
+- 说明:单条知识完整详情,供编辑表单回显。
+- 成功响应:同 2.4,另含 `status` 原样返回(四态均可)。
+- 错误分支:404;401;403。
+
+### 3.4 POST /api/admin/knowledge
+
+- 说明:新增知识,初始状态 `draft`;`source` 必填(简报第 4 节);写 `knowledge_change_log`(action=create)。
+- body:
+
+| 名称 | 类型 | 必填 | 约束 |
+|---|---|---|---|
+| title | string | 是 | 1~100 字符 |
+| categoryId | number | 是 | 正整数,分类必须存在且启用 |
+| content | string | 是 | 1~20000 字符 |
+| source | string | 是 | 1~200 字符(来源必填,FR-11) |
+| effectiveFrom | string | 是 | `YYYY-MM-DD` |
+| effectiveUntil | string | 否 | `YYYY-MM-DD`,且 ≥ effectiveFrom |
+| isVerified | number | 否 | 0/1,默认 0(待核实) |
+
+```json
+{ "title": "宿舍网络故障报修指南", "categoryId": 1, "content": "第一步:自查…", "source": "校网络中心服务指南", "effectiveFrom": "2026-09-01", "effectiveUntil": "2027-07-15" }
+```
+
+- 成功响应:`data: { id: 55, status: "draft" }`(201 语义仍用 200 + 响应包,项目不使用 201)。
+- 错误分支:400(VALIDATION_ERROR,message 逐字段,如 `"标题不能为空"`、`"日期格式应为 YYYY-MM-DD"`,TC-08);401;403;500。
+
+### 3.5 PUT /api/admin/knowledge/:id
+
+- 说明:编辑知识。业务规则:**published / takedown 状态保存后状态自动回退 `draft`**(保证"先审后发"红线),并写变更日志(action=update);draft / pending_review 保存不改变状态。
+- body:同 3.4(全量提交)。
+- 成功响应:`data: { id: 55, status: "draft" }`(回退后的状态)。
+- 错误分支:400;401;403;404;500。
+
+### 3.6 DELETE /api/admin/knowledge/:id
+
+- 说明:物理删除。**仅 `draft` 可删**;其余状态返回 409(引导走下架/审核流程);删除时级联清理其变更日志。
+- 成功响应:`data: { id: 55 }`。
+- 错误分支:409(CONFLICT,`"仅草稿状态的知识可删除,其他状态请使用下架"`);401;403;404;500。
+
+### 3.7 POST /api/admin/knowledge/:id/submit-review
+
+- 说明:提交审核:`draft|takedown → pending_review`(已下架知识修改后重新上架也须经审核),写变更日志(action=submit_review)。
+- body:无。
+- 成功响应:`data: { id: 55, status: "pending_review" }`。
+- 错误分支:409(当前状态不允许提交,如已为 pending_review);401;403;404。
+
+### 3.8 POST /api/admin/knowledge/:id/review
+
+- 说明:审核动作(P04 核心):`pending_review → published`(通过)或 `pending_review → draft`(驳回,comment 必填并写日志)。
+- body:
+
+| 名称 | 类型 | 必填 | 约束 |
+|---|---|---|---|
+| action | string | 是 | `publish` 或 `reject` |
+| comment | string | action=reject 时必填 | 1~200 字符,驳回原因 |
+
+- 成功响应:`data: { id: 55, status: "published" | "draft" }`。
+- 错误分支:400(action 非法 / reject 缺 comment);409(当前状态非 pending_review);401;403;404。
+
+### 3.9 POST /api/admin/knowledge/:id/takedown
+
+- 说明:下架:`published → takedown`,写变更日志(action=takedown)。学生端立即不可见(TC-09"隐藏已下架内容")。
+- body:无。成功响应:`data: { id: 55, status: "takedown" }`。
+- 错误分支:409(当前状态非 published);401;403;404。
+
+### 3.10 GET /api/admin/knowledge/expired(过期/临期工作台)
+
+- 说明:M10/FR-10。按**有效期字段**计算(服务端不做任何"自动标记真实有效",仅识别日期,处理由管理员核实, P05 红线):
+  - `expired`:published 且 `effectiveUntil < 今天`;
+  - `expiring`:published 且 `今天 ≤ effectiveUntil ≤ 今天 + days`。
+- query:
+
+| 名称 | 类型 | 必填 | 约束 |
+|---|---|---|---|
+| state | string | 否 | `expired` / `expiring` / 缺省=两者都返回(分两组语义由 state 字段区分) |
+| days | number | 否 | 临期窗口天数,默认 7 |
+| page / pageSize | number | 否 | 默认 1 / 10 |
+
+- 成功响应:
+
+```json
+{
+  "success": true,
+  "data": {
+    "list": [
+      { "id": 12, "title": "2026 年秋季学期校历", "status": "published", "effectiveUntil": "2026-09-30", "state": "expired", "daysOverdue": 24, "updatedAt": "2026-09-02 11:00:00" }
+    ],
+    "total": 3,
+    "page": 1,
+    "pageSize": 10
+  }
+}
+```
+
+- 错误分支:400;401;403;500。
+
+### 3.11 GET /api/admin/knowledge/:id/change-logs
+
+- 说明:知识修改日志(M10),按时间倒序分页;记录 action 与变更摘要。
+- query:page、pageSize。
+- 成功响应:
+
+```json
+{
+  "success": true,
+  "data": {
+    "list": [
+      { "id": 201, "knowledgeId": 12, "adminId": 1, "adminUsername": "admin", "action": "review_publish", "detail": "审核通过并发布;备注:已与信息化办核实", "createdAt": "2026-09-18 10:23:45" },
+      { "id": 198, "knowledgeId": 12, "adminId": 1, "adminUsername": "admin", "action": "update", "detail": "更新正文第 2 步补办地点", "createdAt": "2026-09-18 10:20:11" }
+    ],
+    "total": 6,
+    "page": 1,
+    "pageSize": 10
+  }
+}
+```
+
+- `action` 枚举:`create / update / delete / submit_review / review_publish / review_reject / takedown`。
+- 错误分支:401;403;404(知识不存在)。
+
+### 3.12 /api/admin/categories CRUD
+
+- `GET /api/admin/categories`:全量列表(含停用),query 无;`list` 项含 `knowledgeCount`(关联知识数,供删除前判断)。401/403。
+- `POST /api/admin/categories`:body `{ name(1~50,必填,唯一), description(≤200,可选), sortOrder(int,默认 0), isEnabled(0/1,默认 1) }`;成功 `data: { id: 4 }`;400 重名(`"分类名称已存在"`);409 语义不适用(重名用 400)。
+- `PUT /api/admin/categories/:id`:body 同上(全量);400/404。
+- `DELETE /api/admin/categories/:id`:**仍有关联知识时 409 CONFLICT**,message `"该分类下仍有 12 条知识,请先迁移或删除"`;成功 `data: { id: 4 }`。
+
+### 3.13 /api/admin/services CRUD
+
+- `GET /api/admin/services`:分页 + keyword + isEnabled 筛选;结构同 2.5(含停用项)。
+- `POST /api/admin/services`:body `{ title(1~100,必填), department(1~100,必填), locationId(number,可选,必须存在), serviceTime(≤100,可选), materials(≤2000,可选), process(≤2000,可选), isEnabled(0/1,默认 1) }`。
+- `PUT /api/admin/services/:id`:全量更新。
+- `DELETE /api/admin/services/:id`:直接删除(无下游引用)。
+- 错误分支统一:400;401;403;404;500。
+
+### 3.14 /api/admin/activities CRUD
+
+- body:`{ title(1~100,必填), startTime(DATETIME,必填), endTime(DATETIME,必填,≥startTime), locationId(可选), signupMethod(≤200,可选), targetAudience(≤200,可选), description(≤2000,可选), isEnabled(0/1,默认 1) }`。
+- 列表/详情/删除规则同 3.13 模式;`DELETE` 直接删除。
+
+### 3.15 /api/admin/locations CRUD
+
+- body:`{ name(1~100,必填), campus(≤50,必填), building(≤100,可选), floor(≤20,可选), room(≤50,可选), description(≤500,可选) }`。
+- `DELETE /api/admin/locations/:id`:被 service_guide / campus_activity / teacher / course_teacher 任一引用时 **409 CONFLICT**,message 含引用数量。
+
+### 3.16 /api/admin/courses CRUD
+
+- body:`{ name(1~100,必填), code(1~20,必填,唯一), semester(≤20,可选,格式如 2026-2027-1), description(≤500,可选) }`;400 重名(`"课程代码已存在"`)。
+- `DELETE /api/admin/courses/:id`:存在任教关系时 409。
+
+### 3.17 /api/admin/teachers CRUD
+
+- body:`{ name(1~50,必填), title(≤50,可选), officeLocationId(number,可选), officeHours(≤100,可选) }`;**仅允许公开字段,不接受电话/工号等字段**(多余字段由 zod `strict()` 拒绝,400)。
+- `DELETE /api/admin/teachers/:id`:存在任教关系时 409。
+
+### 3.18 任教关系管理【补充】
+
+- `GET /api/admin/courses/:id/teachers`:该课程全部任教关系(教师、schedule、location)。
+- `POST /api/admin/courses/:id/teachers`:body `{ teacherId(必填), locationId(可选), schedule(≤100,可选) }`;同一 `(courseId, teacherId)` 重复添加返回 409(`"该教师已关联此课程"`)。
+- `DELETE /api/admin/courses/:id/teachers/:relationId`:按关系主键删除。
+- 错误分支统一:400;401;403;404;409;500。
+
+### 3.19 GET /api/admin/ai-logs
+
+- 说明:AI 对话记录查看(FR-13 可解释性审计入口)。
+- query:
+
+| 名称 | 类型 | 必填 | 约束 |
+|---|---|---|---|
+| sessionKey | string | 否 | 按会话 uuid 过滤 |
+| startDate / endDate | string | 否 | `YYYY-MM-DD`,按 createdAt 过滤 |
+| page / pageSize | number | 否 | 默认 1 / 10 |
+| export | number | 否 | `1`=导出 JSONL(见下) |
+
+- 常规响应:
+
+```json
+{
+  "success": true,
+  "data": {
+    "list": [
+      { "id": 9001, "sessionKey": "9b6f0c1e-5d3a-4a2b-8e9f-1c2d3e4f5a6b", "role": "assistant", "content": "校园卡遗失后请按以下步骤办理…", "sources": [ { "type": "knowledge", "id": 12, "title": "校园卡遗失补办流程" } ], "mode": "deepseek", "retriever": "local_kb", "latencyMs": 2340, "createdAt": "2026-10-24 17:02:11" }
+    ],
+    "total": 128,
+    "page": 1,
+    "pageSize": 10
+  }
+}
+```
+
+- `?export=1` 导出分支:
+  - 响应为 **JSONL 文件流**(不包响应包):`Content-Type: application/jsonl; charset=utf-8`,`Content-Disposition: attachment; filename="ai-chat-export-YYYYMMDD-HHmm.jsonl"`。
+  - 每行一个 JSON 对象,字段: `{ "sessionId": "<uuid>", "role": "user|assistant", "content": "…", "sources": [...], "mode": "deepseek|fallback", "createdAt": "YYYY-MM-DD HH:mm:ss" }`;忽略分页参数,受日期过滤约束。
+  - 导出文件不入 git(`.gitignore: docs/ai-logs/exports/`)。
+- 错误分支:401;403;400(日期格式非法);500。
+
+---
+
+## 4. AI 对话接口专节(POST /api/ai/chat)
+
+### 4.1 行为摘要
+
+1. 校验 `sessionId`(UUID)与 `message`(1~500);
+2. `KnowledgeRetriever.retrieve(message)` 检索知识库(默认 `LocalKbRetriever`),收敛为 top-K 可信条目;
+3. 有可信内容 → 组装提示词调用 DeepSeek 生成(要求引用来源编号,超范围必须回答"知识库未覆盖,请核实");
+4. 无可信内容 → 不调 LLM,直接返回核实话术,`sources: []`;
+5. LLM 超时(20s)/异常 → 降级:检索结果模板化组织回答,`mode: "fallback"`;
+6. 用户消息与回答分别落 `ai_chat_message`(role=user / assistant),assistant 消息记录 `sources_json / mode / retriever / latency_ms`。
+
+### 4.2 状态与错误对照
+
+| 场景 | HTTP | 响应 |
+|---|---|---|
+| 正常(LLM 或降级或拒答) | 200 | `data.answer / sources / mode / retriever`(mode 必须如实标记) |
+| sessionId 非法、message 空/超长 | 400 | `VALIDATION_ERROR`,`message` 指明字段 |
+| 服务内部错误(非 LLM) | 500 | `INTERNAL_ERROR`,`"系统繁忙,请稍后重试"` |
+
+### 4.3 sessionId 生成约定(前端)
+
+- 前端首次进入 AI 页面时生成 `crypto.randomUUID()`,存 `localStorage.ssda_ai_session_id` 并持久复用;同一浏览器会话历史由此串联。后端不关联任何账号/设备指纹(隐私合规)。
+
+---
+
+## 5. 追溯矩阵(接口 ↔ FR ↔ M ↔ TC)
+
+> 反向核对结论:TC-01~10 全部有接口承载;FR-01~11、FR-13 均有接口覆盖;FR-12 本期不做。缺口标注见矩阵备注与 worklog 完成报告。
+
+| 接口 | 方法 | 权限 | FR | M | 前端页面 | 验证 TC |
+|---|---|---|---|---|---|---|
+| /api/health | GET | 公开 | —(部署自检) | — | — | TC-10(辅助:db 状态探测) |
+| /api/categories | GET | 公开 | FR-01 | M01 | 首页、知识列表(分类导航) | TC-05 |
+| /api/knowledge | GET | 公开 | FR-01、FR-02、FR-10 | M01、M02、M07 | 首页最新知识、知识列表 | TC-01、TC-02、TC-03、TC-05、TC-09 |
+| /api/knowledge/:id | GET | 公开 | FR-03、FR-10、FR-11 | M02 | 知识详情 | TC-04、TC-09 |
+| /api/services | GET | 公开 | FR-04 | M03 | 办事指南列表 | TC-01、TC-03 |
+| /api/services/:id | GET | 公开 | FR-04 | M03 | 办事指南详情 | TC-04(详情口径通用) |
+| /api/activities | GET | 公开 | FR-06 | M04 | 活动列表 | TC-01、TC-03 |
+| /api/activities/:id | GET | 公开 | FR-06 | M04 | 活动详情 | TC-04 |
+| /api/locations | GET | 公开 | FR-05 | M05 | 地点查询 | TC-01、TC-03 |
+| /api/courses | GET | 公开 | FR-05 | M06 | 课程教师页(课程 Tab) | TC-01、TC-03 |
+| /api/courses/:id | GET | 公开 | FR-05 | M06 | 课程教师页(详情抽屉) | TC-01(P03 关联) |
+| /api/teachers | GET | 公开 | FR-05 | M06 | 课程教师页(教师 Tab) | TC-01、TC-03 |
+| /api/teachers/:id | GET | 公开 | FR-05 | M06 | 课程教师页(详情抽屉) | TC-01(P03 关联) |
+| /api/search | GET | 公开 | FR-02、FR-04、FR-05、FR-06 | M07 | 聚合搜索结果页 | TC-01、TC-02、TC-03 |
+| /api/ai/chat | POST | 公开(匿名) | FR-13 | —(AI 组件) | AI 助手页、悬浮入口 | AI 专项用例(建议测试 Agent 增补,见备注 3) |
+| /api/admin/auth/login | POST | 公开 | FR-07 | M08 | /admin/login | TC-07 |
+| /api/admin/knowledge | GET | JWT | FR-08、FR-10 | M09 | 管理端-知识管理 | TC-06 |
+| /api/admin/knowledge/:id | GET | JWT | FR-08 | M09 | 知识编辑表单回显 | TC-08 |
+| /api/admin/knowledge | POST | JWT | FR-08、FR-11 | M09 | 知识新增表单 | TC-06、TC-08 |
+| /api/admin/knowledge/:id | PUT | JWT | FR-08、FR-10、FR-11 | M09、M10 | 知识编辑表单 | TC-08 |
+| /api/admin/knowledge/:id | DELETE | JWT | FR-08 | M09 | 知识管理列表 | TC-07(未授权拒绝同样适用) |
+| /api/admin/knowledge/:id/submit-review | POST | JWT | FR-08、FR-10 | M09 | 知识管理(P04) | TC-06 |
+| /api/admin/knowledge/:id/review | POST | JWT | FR-08、FR-10 | M09 | 知识管理审核(P04) | TC-06 |
+| /api/admin/knowledge/:id/takedown | POST | JWT | FR-10 | M10 | 知识管理/过期工作台(P05) | TC-09 |
+| /api/admin/knowledge/expired | GET | JWT | FR-10 | M10 | 过期信息工作台 | TC-09 |
+| /api/admin/knowledge/:id/change-logs | GET | JWT | FR-10、FR-11 | M10 | 知识管理(日志抽屉) | 备注 2 |
+| /api/admin/categories(CRUD×4) | GET/POST/PUT/DELETE | JWT | FR-09 | M01 | 分类管理 | TC-05(间接),备注 2 |
+| /api/admin/services(CRUD×4) | GET/POST/PUT/DELETE | JWT | FR-04 | M03 | 办事指南管理 | TC-08(表单校验口径) |
+| /api/admin/activities(CRUD×4) | GET/POST/PUT/DELETE | JWT | FR-06 | M04 | 活动管理 | TC-08 |
+| /api/admin/locations(CRUD×4) | GET/POST/PUT/DELETE | JWT | FR-05 | M05 | 地点管理 | 备注 2 |
+| /api/admin/courses(CRUD×4) | GET/POST/PUT/DELETE | JWT | FR-05 | M06 | 课程教师管理 | 备注 2 |
+| /api/admin/teachers(CRUD×4) | GET/POST/PUT/DELETE | JWT | FR-05 | M06 | 课程教师管理 | 备注 2 |
+| /api/admin/courses/:id/teachers(×3) | GET/POST/DELETE | JWT | FR-05 | M06 | 课程教师管理(任教关系) | 备注 2 |
+| /api/admin/ai-logs | GET | JWT | FR-13 | —(AI 组件) | /admin/ai-logs | 备注 2 |
+
+矩阵备注:
+
+1. FR-12(收藏)**本期不做**,无接口、无页面、无 TC,与简报 3.1 一致。
+2. 标注"备注 2"的接口当前没有直接对应的 TC-01~10;FR-09(中优先级)与若干管理 CRUD 属于支撑性功能。建议测试 Agent 在自动化用例中为"分类删除冲突(409)""任教关系维护""AI 日志导出"增补用例(编号建议 TC-11+,提请总控裁决后由测试 Agent 登记)。
+3. FR-13(AI 问答)在 TC-01~10 中无覆盖项,验收需要专项用例(检索命中/检索未命中拒答/降级路径/隐私不留身份信息)。已列入 worklog 完成报告"需总控决策事项"。
