@@ -1,5 +1,7 @@
 import type { ErrorRequestHandler, RequestHandler } from 'express';
+import { ZodError } from 'zod';
 import { HttpError } from '../utils/http';
+import { zodToHttpError } from './validate';
 
 export const notFoundHandler: RequestHandler = (req, res) => {
   res.status(404).json({
@@ -9,14 +11,22 @@ export const notFoundHandler: RequestHandler = (req, res) => {
 };
 
 /**
- * 统一错误处理:业务错误按 HttpError 输出;未知错误只记录日志,
- * 向客户端返回统一提示,不泄露堆栈与连接凭据(TC-10)。
+ * 统一错误处理:业务错误按 HttpError 输出;zod 校验错误转 400(TC-08);
+ * 未知错误只记录日志,向客户端返回统一提示,不泄露堆栈与连接凭据(TC-10)。
  */
 export const errorHandler: ErrorRequestHandler = (err, _req, res, _next) => {
   if (err instanceof HttpError) {
     res.status(err.status).json({
       success: false,
       error: { code: err.code, message: err.message }
+    });
+    return;
+  }
+  if (err instanceof ZodError) {
+    const httpError = zodToHttpError(err);
+    res.status(httpError.status).json({
+      success: false,
+      error: { code: httpError.code, message: httpError.message }
     });
     return;
   }

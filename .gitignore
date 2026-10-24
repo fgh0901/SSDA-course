@@ -41,6 +41,9 @@ Desktop.ini
 # ZCode session artifacts (skills under .zcode/skills/ ARE committed)
 .zcode/plans/
 
+# AI chat log exports (generated at runtime; re-export before submission)
+docs/ai-logs/exports/
+
 # Temporary files
 *.tmp
 *.temp

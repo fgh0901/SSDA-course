@@ -1,4 +1,4 @@
-import type { Response } from 'express';
+import type { RequestHandler, Response } from 'express';
 
 /** 统一成功响应包:{ success: true, data } */
 export function ok(res: Response, data: unknown = null): void {
@@ -21,3 +21,11 @@ export class HttpError extends Error {
     this.name = 'HttpError';
   }
 }
+
+/** 包装异步控制器:异常统一 next(err) 交给错误中间件 */
+export function asyncHandler(fn: RequestHandler): RequestHandler {
+  return (req, res, next) => {
+    void Promise.resolve(fn(req, res, next)).catch(next);
+  };
+}
+
