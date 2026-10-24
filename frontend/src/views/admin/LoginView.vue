@@ -50,6 +50,9 @@ async function onLogin(): Promise<void> {
       <h1 class="login__title">
         SSDA 管理后台
       </h1>
+      <p class="login__subtitle">
+        新生校园知识库与入学事务辅助系统
+      </p>
       <el-alert
         v-if="loginError"
         :title="loginError"
@@ -110,15 +113,22 @@ async function onLogin(): Promise<void> {
   align-items: center;
   justify-content: center;
   min-height: 100vh;
-  background: #f5f7fa;
+  background: linear-gradient(160deg, #eaf2ff 0%, #f6f8fb 55%, #eefbff 100%);
 }
 .login__card {
   width: 380px;
+  padding: 8px 4px;
 }
 .login__title {
   text-align: center;
-  margin: 0 0 20px;
+  margin: 0 0 4px;
   font-size: 20px;
+}
+.login__subtitle {
+  text-align: center;
+  margin: 0 0 24px;
+  font-size: 12px;
+  color: #909399;
 }
 .login__error {
   margin-bottom: 16px;

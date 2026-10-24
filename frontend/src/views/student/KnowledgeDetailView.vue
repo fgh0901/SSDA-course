@@ -35,7 +35,10 @@ onMounted(fetchDetail);
 </script>
 
 <template>
-  <div v-loading="loading">
+  <div
+    v-loading="loading"
+    class="detail"
+  >
     <template v-if="detail">
       <ExpiredBanner
         v-if="detail.isExpired"
@@ -94,6 +97,13 @@ onMounted(fetchDetail);
 </template>
 
 <style scoped>
+.detail {
+  background: #fff;
+  border-radius: var(--ssda-radius-card);
+  border: 1px solid #eef1f6;
+  box-shadow: var(--ssda-shadow-1);
+  padding: 24px 28px;
+}
 .detail__banner {
   margin-bottom: 16px;
 }
@@ -101,7 +111,9 @@ onMounted(fetchDetail);
   display: flex;
   align-items: center;
   gap: 8px;
+  flex-wrap: wrap;
   margin: 0 0 12px;
+  line-height: 1.5;
 }
 .detail__meta {
   display: flex;
@@ -113,8 +125,9 @@ onMounted(fetchDetail);
 }
 .detail__content {
   white-space: pre-wrap;
+  font-size: 15px;
   line-height: 1.8;
-  color: #303133;
+  color: var(--el-text-color-regular);
 }
 .detail__back {
   margin-top: 24px;

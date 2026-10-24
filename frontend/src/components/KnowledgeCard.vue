@@ -57,6 +57,15 @@ const expired = computed(() => isExpiredOn(props.item.effectiveUntil));
 </template>
 
 <style scoped>
+.knowledge-card {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.knowledge-card:hover {
+  transform: translateY(-2px);
+}
+.knowledge-card :deep(.el-card__body) {
+  padding: 20px;
+}
 .knowledge-card__header {
   display: flex;
   align-items: center;
@@ -66,16 +75,21 @@ const expired = computed(() => isExpiredOn(props.item.effectiveUntil));
 .knowledge-card__title {
   font-size: 16px;
   font-weight: 600;
-  color: #303133;
+  color: var(--el-text-color-primary);
   text-decoration: none;
 }
 .knowledge-card__title:hover {
-  color: #409eff;
+  color: var(--el-color-primary);
 }
 .knowledge-card__summary {
-  margin: 8px 0;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+  margin: 8px 0 12px;
   color: #606266;
   font-size: 14px;
+  line-height: 1.7;
 }
 .knowledge-card__meta {
   display: flex;

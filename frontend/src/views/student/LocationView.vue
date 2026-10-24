@@ -62,7 +62,12 @@ onMounted(async () => {
 
 <template>
   <div>
-    <h1>地点查询</h1>
+    <div class="page-head">
+      <h1>地点查询</h1>
+      <p class="page-head__desc">
+        按名称搜索,或按校区、建筑、楼层逐级筛选地点
+      </p>
+    </div>
     <div class="filter-bar">
       <el-input
         v-model="keyword"
@@ -171,7 +176,7 @@ onMounted(async () => {
         </template>
       </el-table-column>
       <template #empty>
-        <el-empty description="未找到相关结果,换个条件试试" />
+        <el-empty description="未找到相关地点,换个条件试试" />
       </template>
     </el-table>
 
@@ -187,20 +192,10 @@ onMounted(async () => {
 </template>
 
 <style scoped>
-.filter-bar {
-  display: flex;
-  gap: 8px;
-  margin-bottom: 12px;
-  flex-wrap: wrap;
-}
 .filter-bar__keyword {
   width: 240px;
 }
 .filter-bar__select {
   width: 150px;
-}
-.pager {
-  margin-top: 16px;
-  justify-content: flex-end;
 }
 </style>

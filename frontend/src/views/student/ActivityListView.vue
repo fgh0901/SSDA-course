@@ -47,7 +47,12 @@ onMounted(fetchList);
 
 <template>
   <div>
-    <h1>校园活动</h1>
+    <div class="page-head">
+      <h1>校园活动</h1>
+      <p class="page-head__desc">
+        进行中与即将开始的校园活动一览,含时间、地点与报名方式
+      </p>
+    </div>
     <div class="filter-bar">
       <el-input
         v-model="keyword"
@@ -83,7 +88,7 @@ onMounted(fetchList);
         name=""
       />
       <el-tab-pane
-        label="进行中/即将开始"
+        label="进行中 / 即将开始"
         name="upcoming"
       />
       <el-tab-pane
@@ -157,19 +162,10 @@ onMounted(fetchList);
 </template>
 
 <style scoped>
-.filter-bar {
-  display: flex;
-  gap: 8px;
-  margin-bottom: 12px;
-}
 .filter-bar__keyword {
   width: 260px;
 }
 .filter-bar__tip {
-  margin-bottom: 12px;
-}
-.pager {
-  margin-top: 16px;
-  justify-content: flex-end;
+  margin-bottom: 16px;
 }
 </style>

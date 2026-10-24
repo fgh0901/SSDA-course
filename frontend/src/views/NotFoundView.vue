@@ -23,6 +23,6 @@
 
 <style scoped>
 .not-found {
-  padding: 80px 16px;
+  padding: 96px 16px;
 }
 </style>

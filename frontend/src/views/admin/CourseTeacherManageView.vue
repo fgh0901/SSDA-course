@@ -147,7 +147,7 @@ async function onCourseSave(): Promise<void> {
 }
 
 async function onCourseDelete(row: CourseItem): Promise<void> {
-  await ElMessageBox.confirm(`确认删除课程「${row.name}」?存在任教关系时将被拒绝。`, '删除确认', { type: 'warning' });
+  await ElMessageBox.confirm(`确认删除课程「${row.name}」？存在任教关系时将被拒绝。`, '删除确认', { type: 'warning' });
   try {
     await deleteCourse(row.id);
     ElMessage.success('已删除');
@@ -197,7 +197,7 @@ async function onTeacherSave(): Promise<void> {
 }
 
 async function onTeacherDelete(row: TeacherItem): Promise<void> {
-  await ElMessageBox.confirm(`确认删除教师「${row.name}」?存在任教关系时将被拒绝。`, '删除确认', { type: 'warning' });
+  await ElMessageBox.confirm(`确认删除教师「${row.name}」？存在任教关系时将被拒绝。`, '删除确认', { type: 'warning' });
   try {
     await deleteTeacher(row.id);
     ElMessage.success('已删除');
@@ -270,7 +270,7 @@ async function onAddRelation(): Promise<void> {
 
 async function onRemoveRelation(rel: AdminCourseTeacherRel): Promise<void> {
   if (!relationCourse.value) return;
-  await ElMessageBox.confirm(`确认移除教师「${rel.teacherName}」的任教关系?`, '移除确认', { type: 'warning' });
+  await ElMessageBox.confirm(`确认移除教师「${rel.teacherName}」的任教关系？`, '移除确认', { type: 'warning' });
   await removeCourseTeacher(relationCourse.value.id, rel.relationId);
   ElMessage.success('已移除');
   await reloadRelations();
@@ -289,7 +289,12 @@ onMounted(async () => {
 
 <template>
   <div>
-    <h2>课程教师管理</h2>
+    <div class="page-head">
+      <h2>课程教师管理</h2>
+      <p class="page-head__desc">
+        维护课程、教师基础信息与任教关系;未录入的关系不做推断,以教务系统课表为准
+      </p>
+    </div>
     <el-tabs
       v-model="activeTab"
       @tab-change="onTabChange"
@@ -383,7 +388,7 @@ onMounted(async () => {
             </template>
           </el-table-column>
           <template #empty>
-            <el-empty description="暂无数据" />
+            <el-empty description="暂无课程,可调整关键词或新增" />
           </template>
         </el-table>
         <el-pagination
@@ -489,7 +494,7 @@ onMounted(async () => {
             </template>
           </el-table-column>
           <template #empty>
-            <el-empty description="暂无数据" />
+            <el-empty description="暂无教师,可调整关键词或新增" />
           </template>
         </el-table>
         <el-pagination
@@ -751,7 +756,7 @@ onMounted(async () => {
 .toolbar {
   display: flex;
   justify-content: flex-end;
-  margin-bottom: 12px;
+  margin-bottom: 16px;
 }
 .toolbar__actions {
   display: flex;
@@ -759,9 +764,5 @@ onMounted(async () => {
 }
 .toolbar__keyword {
   width: 220px;
-}
-.pager {
-  margin-top: 16px;
-  justify-content: flex-end;
 }
 </style>

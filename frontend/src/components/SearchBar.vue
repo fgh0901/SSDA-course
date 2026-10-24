@@ -46,7 +46,7 @@ function onSearch(): void {
 <style scoped>
 .search-bar {
   display: flex;
-  gap: 8px;
+  gap: 12px;
   width: 100%;
 }
 </style>

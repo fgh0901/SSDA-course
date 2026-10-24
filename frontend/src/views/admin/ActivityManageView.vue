@@ -130,7 +130,7 @@ async function onSave(): Promise<void> {
 }
 
 async function onDelete(row: ActivityItem): Promise<void> {
-  await ElMessageBox.confirm(`确认删除活动「${row.title}」?`, '删除确认', { type: 'warning' });
+  await ElMessageBox.confirm(`确认删除活动「${row.title}」？`, '删除确认', { type: 'warning' });
   await deleteActivity(row.id);
   ElMessage.success('已删除');
   void fetchList();
@@ -150,7 +150,12 @@ onMounted(async () => {
 <template>
   <div>
     <div class="toolbar">
-      <h2>活动管理</h2>
+      <div class="page-head">
+        <h2>活动管理</h2>
+        <p class="page-head__desc">
+          维护校园活动的时间、地点、报名方式与适用对象;停用后学生端不可见
+        </p>
+      </div>
       <div class="toolbar__actions">
         <el-input
           v-model="keyword"
@@ -232,7 +237,7 @@ onMounted(async () => {
         </template>
       </el-table-column>
       <template #empty>
-        <el-empty description="暂无数据" />
+        <el-empty description="暂无活动,可调整关键词或新增" />
       </template>
     </el-table>
 
@@ -355,10 +360,10 @@ onMounted(async () => {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 12px;
+  margin-bottom: 16px;
 }
-.toolbar h2 {
-  margin: 0;
+.toolbar .page-head {
+  margin-bottom: 0;
 }
 .toolbar__actions {
   display: flex;
@@ -366,9 +371,5 @@ onMounted(async () => {
 }
 .toolbar__keyword {
   width: 220px;
-}
-.pager {
-  margin-top: 16px;
-  justify-content: flex-end;
 }
 </style>

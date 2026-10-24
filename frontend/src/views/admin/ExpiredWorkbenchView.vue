@@ -46,7 +46,7 @@ function onEdit(row: ExpiredKnowledgeItem): void {
 
 async function onTakedown(row: ExpiredKnowledgeItem): Promise<void> {
   await ElMessageBox.confirm(
-    `确认下架「${row.title}」?下架后学生端立即不可见。`,
+    `确认下架「${row.title}」？下架后学生端立即不可见。`,
     '下架确认',
     { type: 'warning' }
   );
@@ -60,12 +60,17 @@ onMounted(fetchList);
 
 <template>
   <div>
-    <h2>过期信息工作台</h2>
+    <div class="page-head">
+      <h2>过期信息工作台</h2>
+      <p class="page-head__desc">
+        集中处理已过期与临期知识,支持核实更新与下架,处理后学生端即时生效
+      </p>
+    </div>
     <el-alert
       type="info"
       :closable="false"
       show-icon
-      title="系统仅按有效期字段识别过期/临期,处理结果以人工核实为准(未经核实不得自动标记真实有效)"
+      title="系统仅按有效期字段识别过期/临期,处理结果以人工核实为准（未经核实不得自动标记真实有效）"
       class="p05-tip"
     />
 
@@ -175,10 +180,6 @@ onMounted(fetchList);
 
 <style scoped>
 .p05-tip {
-  margin-bottom: 12px;
-}
-.pager {
-  margin-top: 16px;
-  justify-content: flex-end;
+  margin-bottom: 16px;
 }
 </style>

@@ -25,6 +25,7 @@ const meta = computed(() => {
   <el-tag
     :type="meta.type"
     size="small"
+    round
   >
     {{ meta.label }}
   </el-tag>

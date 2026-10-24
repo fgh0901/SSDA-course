@@ -1,0 +1,197 @@
+/**
+ * SSDA 全局样式(04-ui-design-spec 的实现载体)
+ * 引入顺序:必须在 element-plus/dist/index.css 之后,保证变量覆盖生效。
+ * 只做视觉层:设计令牌、Element Plus 主题变量覆盖、通用排版与组件精修。
+ */
+
+:root {
+  /* ---- 品牌色:教育清新蓝(主色 + color-mix 派生色阶) ---- */
+  --ssda-primary: #2b7fff;
+
+  --el-color-primary: #2b7fff;
+  --el-color-primary-dark-2: color-mix(in srgb, #2b7fff 80%, #000);
+  --el-color-primary-light-3: color-mix(in srgb, #2b7fff 70%, #fff);
+  --el-color-primary-light-5: color-mix(in srgb, #2b7fff 50%, #fff);
+  --el-color-primary-light-7: color-mix(in srgb, #2b7fff 30%, #fff);
+  --el-color-primary-light-8: color-mix(in srgb, #2b7fff 20%, #fff);
+  --el-color-primary-light-9: color-mix(in srgb, #2b7fff 10%, #fff);
+
+  /* ---- 状态四态色(published 绿 / pending_review 橙 / draft 灰 / takedown 红) ---- */
+  --el-color-success: #16a34a;
+  --el-color-success-dark-2: color-mix(in srgb, #16a34a 80%, #000);
+  --el-color-success-light-3: color-mix(in srgb, #16a34a 70%, #fff);
+  --el-color-success-light-5: color-mix(in srgb, #16a34a 50%, #fff);
+  --el-color-success-light-7: color-mix(in srgb, #16a34a 30%, #fff);
+  --el-color-success-light-8: color-mix(in srgb, #16a34a 20%, #fff);
+  --el-color-success-light-9: color-mix(in srgb, #16a34a 10%, #fff);
+
+  --el-color-warning: #d97706;
+  --el-color-warning-dark-2: color-mix(in srgb, #d97706 80%, #000);
+  --el-color-warning-light-3: color-mix(in srgb, #d97706 70%, #fff);
+  --el-color-warning-light-5: color-mix(in srgb, #d97706 50%, #fff);
+  --el-color-warning-light-7: color-mix(in srgb, #d97706 30%, #fff);
+  --el-color-warning-light-8: color-mix(in srgb, #d97706 20%, #fff);
+  --el-color-warning-light-9: color-mix(in srgb, #d97706 10%, #fff);
+
+  --el-color-danger: #dc2626;
+  --el-color-danger-dark-2: color-mix(in srgb, #dc2626 80%, #000);
+  --el-color-danger-light-3: color-mix(in srgb, #dc2626 70%, #fff);
+  --el-color-danger-light-5: color-mix(in srgb, #dc2626 50%, #fff);
+  --el-color-danger-light-7: color-mix(in srgb, #dc2626 30%, #fff);
+  --el-color-danger-light-8: color-mix(in srgb, #dc2626 20%, #fff);
+  --el-color-danger-light-9: color-mix(in srgb, #dc2626 10%, #fff);
+
+  --el-color-info: #909399;
+  --el-color-info-dark-2: color-mix(in srgb, #909399 80%, #000);
+  --el-color-info-light-3: color-mix(in srgb, #909399 70%, #fff);
+  --el-color-info-light-5: color-mix(in srgb, #909399 50%, #fff);
+  --el-color-info-light-7: color-mix(in srgb, #909399 30%, #fff);
+  --el-color-info-light-8: color-mix(in srgb, #909399 20%, #fff);
+  --el-color-info-light-9: color-mix(in srgb, #909399 10%, #fff);
+
+  /* ---- 中性色与文字色 ---- */
+  --ssda-bg-page: #f6f8fb;
+  --ssda-border-color: #eef1f6;
+  --el-text-color-primary: #1f2d3d;
+  --el-text-color-regular: #303133;
+  --el-text-color-secondary: #606266;
+
+  /* ---- 圆角:卡片 12 / 控件 8 / 小件 6 ---- */
+  --ssda-radius-card: 12px;
+  --el-border-radius-base: 8px;
+  --el-border-radius-small: 6px;
+  --el-border-radius-round: 999px;
+
+  /* ---- 阴影两级 ---- */
+  --ssda-shadow-1: 0 1px 2px rgba(15, 23, 42, 0.04), 0 2px 6px rgba(15, 23, 42, 0.05);
+  --ssda-shadow-2: 0 8px 24px rgba(15, 23, 42, 0.1), 0 2px 8px rgba(15, 23, 42, 0.06);
+
+  /* ---- 字体栈:系统中文字体优先 ---- */
+  --el-font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'PingFang SC',
+    'Hiragino Sans GB', 'Microsoft YaHei', '微软雅黑', Arial, sans-serif;
+}
+
+/* ---- 基础排版 ---- */
+body {
+  font-family: var(--el-font-family);
+  background-color: var(--ssda-bg-page);
+  color: var(--el-text-color-regular);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+h1 {
+  margin: 0 0 16px;
+  font-size: 22px;
+  font-weight: 600;
+  line-height: 1.4;
+  color: var(--el-text-color-primary);
+}
+
+h2 {
+  margin: 0 0 12px;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--el-text-color-primary);
+}
+
+h3 {
+  margin: 0 0 8px;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--el-text-color-primary);
+}
+
+/* 链接统一主色 */
+a {
+  color: var(--el-color-primary);
+  text-decoration: none;
+}
+a:hover {
+  color: var(--el-color-primary-dark-2);
+}
+
+/* 滚动条精修(webkit) */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-thumb {
+  background: #c9d2e0;
+  border-radius: 999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #a9b5c8;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+/* ---- 通用页头:标题 + 描述(04-ui-design-spec 4.1) ---- */
+.page-head {
+  margin-bottom: 16px;
+}
+.page-head h1,
+.page-head h2 {
+  margin-bottom: 0;
+}
+.page-head__desc {
+  margin: 4px 0 0;
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--el-text-color-secondary);
+}
+
+/* ---- 通用筛选栏与分页(各列表页共享) ---- */
+.filter-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+.pager {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 20px;
+}
+
+/* ---- Element Plus 组件精修 ---- */
+
+/* 卡片:12px 圆角 + 一级阴影,hover 升二级 */
+.el-card {
+  border-radius: var(--ssda-radius-card);
+  border-color: var(--ssda-border-color);
+  box-shadow: var(--ssda-shadow-1);
+}
+.el-card.is-hover-shadow:hover,
+.el-card[shadow='hover']:hover {
+  box-shadow: var(--ssda-shadow-2);
+}
+
+/* 表格:表头浅灰加粗、行 hover 浅蓝 */
+.el-table {
+  --el-table-header-bg-color: #f8fafc;
+  --el-table-header-text-color: #475569;
+  --el-table-row-hover-bg-color: #f5f8ff;
+}
+.el-table th.el-table__cell {
+  font-weight: 600;
+}
+
+/* 提示条(alert)圆角与留白 */
+.el-alert {
+  border-radius: var(--el-border-radius-base);
+}
+
+/* 对话框 / 抽屉 / 消息框圆角 */
+.el-dialog {
+  border-radius: var(--ssda-radius-card);
+}
+.el-message-box {
+  border-radius: var(--ssda-radius-card);
+}
+
+/* 空状态留白收敛 */
+.el-empty {
+  padding: 32px 0;
+}

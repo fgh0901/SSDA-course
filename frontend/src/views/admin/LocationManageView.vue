@@ -101,7 +101,7 @@ async function onSave(): Promise<void> {
 }
 
 async function onDelete(row: LocationItem): Promise<void> {
-  await ElMessageBox.confirm(`确认删除地点「${row.name}」?`, '删除确认', { type: 'warning' });
+  await ElMessageBox.confirm(`确认删除地点「${row.name}」？`, '删除确认', { type: 'warning' });
   try {
     await deleteLocation(row.id); // 409(被引用)拦截器展示后端 message 含引用数量
     ElMessage.success('已删除');
@@ -117,7 +117,12 @@ onMounted(fetchList);
 <template>
   <div>
     <div class="toolbar">
-      <h2>地点管理</h2>
+      <div class="page-head">
+        <h2>地点管理</h2>
+        <p class="page-head__desc">
+          维护校区、建筑、楼层与房间信息;被引用的地点删除会被拒绝
+        </p>
+      </div>
       <div class="toolbar__actions">
         <el-input
           v-model="keyword"
@@ -210,7 +215,7 @@ onMounted(fetchList);
         </template>
       </el-table-column>
       <template #empty>
-        <el-empty description="暂无数据" />
+        <el-empty description="暂无地点,可调整关键词或新增" />
       </template>
     </el-table>
 
@@ -311,10 +316,10 @@ onMounted(fetchList);
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 12px;
+  margin-bottom: 16px;
 }
-.toolbar h2 {
-  margin: 0;
+.toolbar .page-head {
+  margin-bottom: 0;
 }
 .toolbar__actions {
   display: flex;
@@ -322,9 +327,5 @@ onMounted(fetchList);
 }
 .toolbar__keyword {
   width: 220px;
-}
-.pager {
-  margin-top: 16px;
-  justify-content: flex-end;
 }
 </style>

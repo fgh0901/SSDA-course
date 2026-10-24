@@ -33,6 +33,12 @@ function goAiChat(): void {
   height: 56px;
   font-size: 16px;
   font-weight: 600;
-  box-shadow: 0 4px 12px rgba(64, 158, 255, 0.4);
+  letter-spacing: 0.5px;
+  box-shadow: 0 8px 24px rgba(43, 127, 255, 0.35);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.ai-float-entry:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 28px rgba(43, 127, 255, 0.4);
 }
 </style>

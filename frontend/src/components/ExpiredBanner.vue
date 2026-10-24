@@ -10,5 +10,12 @@ defineProps<{ effectiveUntil: string }>();
     show-icon
     :title="`该信息已过有效期(${effectiveUntil}),仅供参考,请以官方通知核实`"
     data-testid="expired-banner"
+    class="expired-banner"
   />
 </template>
+
+<style scoped>
+.expired-banner {
+  border-radius: 8px;
+}
+</style>

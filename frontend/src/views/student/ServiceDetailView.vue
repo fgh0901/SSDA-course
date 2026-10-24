@@ -33,7 +33,10 @@ onMounted(fetchDetail);
 </script>
 
 <template>
-  <div v-loading="loading">
+  <div
+    v-loading="loading"
+    class="detail"
+  >
     <template v-if="detail">
       <h1>{{ detail.title }}</h1>
       <div class="detail__meta">
@@ -49,7 +52,7 @@ onMounted(fetchDetail);
         <el-descriptions-item label="办理地点">
           <template v-if="detail.location">
             {{ detail.location.campus || '' }} {{ detail.location.building || '' }} {{ detail.location.floor || '' }}层
-            {{ detail.location.room || '' }}({{ detail.location.name }})
+            {{ detail.location.room || '' }}（{{ detail.location.name }}）
             <router-link
               to="/locations"
               class="detail__link"
@@ -87,6 +90,13 @@ onMounted(fetchDetail);
 </template>
 
 <style scoped>
+.detail {
+  background: #fff;
+  border-radius: var(--ssda-radius-card);
+  border: 1px solid #eef1f6;
+  box-shadow: var(--ssda-shadow-1);
+  padding: 24px 28px;
+}
 .detail__meta {
   display: flex;
   gap: 16px;
@@ -97,6 +107,9 @@ onMounted(fetchDetail);
 }
 .detail__desc {
   margin-top: 8px;
+}
+.detail__desc :deep(.el-descriptions__label) {
+  width: 96px;
 }
 .detail__link {
   margin-left: 8px;

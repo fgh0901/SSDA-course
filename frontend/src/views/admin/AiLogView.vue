@@ -77,7 +77,12 @@ onMounted(fetchList);
 <template>
   <div>
     <div class="toolbar">
-      <h2>AI 对话记录</h2>
+      <div class="page-head">
+        <h2>AI 对话记录</h2>
+        <p class="page-head__desc">
+          审计学生端 AI 问答:按会话查看消息、模式与来源,支持导出 JSONL
+        </p>
+      </div>
       <el-button
         type="primary"
         :loading="exporting"
@@ -132,7 +137,7 @@ onMounted(fetchList);
         >
           <template #title>
             <span class="session-title">
-              会话 {{ s.key.slice(0, 8) }}…({{ s.messages.length }} 条)
+              会话 {{ s.key.slice(0, 8) }}…（{{ s.messages.length }} 条）
               <el-tag
                 v-if="s.mode === 'fallback'"
                 type="warning"
@@ -169,7 +174,7 @@ onMounted(fetchList);
               <span
                 v-if="m.role === 'assistant' && m.latencyMs != null"
                 class="msg__latency"
-              >耗时 {{ m.latencyMs }}ms</span>
+              >耗时 {{ m.latencyMs }} ms</span>
               <span class="msg__time">{{ m.createdAt }}</span>
             </div>
             <div class="msg__content">
@@ -183,7 +188,7 @@ onMounted(fetchList);
                 v-for="(src, i) in m.sources"
                 :key="i"
                 class="msg__source"
-              >[{{ i + 1 }}] {{ src.title }}({{ src.type }})</span>
+              >[{{ i + 1 }}] {{ src.title }}（{{ src.type }}）</span>
             </div>
           </div>
         </el-collapse-item>
@@ -210,18 +215,19 @@ onMounted(fetchList);
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 8px;
+  margin-bottom: 16px;
 }
-.toolbar h2 {
-  margin: 0;
+.toolbar .page-head {
+  margin-bottom: 0;
 }
 .toolbar__tip {
-  margin-bottom: 12px;
+  margin-bottom: 16px;
 }
 .toolbar__filters {
   display: flex;
-  gap: 8px;
-  margin-bottom: 12px;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 16px;
 }
 .toolbar__session {
   width: 320px;
@@ -235,13 +241,13 @@ onMounted(fetchList);
   gap: 8px;
 }
 .msg {
-  padding: 8px 12px;
-  border-radius: 6px;
+  padding: 10px 14px;
+  border-radius: 8px;
   margin-bottom: 8px;
-  background: #f5f7fa;
+  background: var(--ssda-bg-page);
 }
 .msg--assistant {
-  background: #ecf5ff;
+  background: var(--el-color-primary-light-9);
 }
 .msg__head {
   display: flex;
@@ -260,6 +266,7 @@ onMounted(fetchList);
 .msg__content {
   white-space: pre-wrap;
   font-size: 13px;
+  line-height: 1.7;
 }
 .msg__sources {
   margin-top: 6px;
@@ -269,9 +276,5 @@ onMounted(fetchList);
 .msg__source {
   display: inline-block;
   margin-right: 12px;
-}
-.pager {
-  margin-top: 16px;
-  justify-content: flex-end;
 }
 </style>

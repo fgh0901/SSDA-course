@@ -31,6 +31,10 @@ function goCategory(categoryId: number): void {
           to="/"
           class="student-layout__logo"
         >
+          <span
+            class="student-layout__logo-dot"
+            aria-hidden="true"
+          />
           新生校园知识库
         </router-link>
         <el-dropdown data-testid="category-nav">
@@ -100,41 +104,62 @@ function goCategory(categoryId: number): void {
 
 <style scoped>
 .student-layout__header {
+  position: sticky;
+  top: 0;
+  z-index: 100;
   display: flex;
   align-items: center;
-  gap: 16px;
-  border-bottom: 1px solid #ebeef5;
+  gap: 20px;
+  border-bottom: 1px solid #eef1f6;
   background: #fff;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
 }
 .student-layout__brand {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 16px;
   white-space: nowrap;
 }
 .student-layout__logo {
-  font-size: 18px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 17px;
   font-weight: 700;
-  color: #409eff;
+  letter-spacing: 0.5px;
+  color: var(--el-color-primary);
   text-decoration: none;
+}
+.student-layout__logo-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 3px;
+  background: linear-gradient(135deg, var(--el-color-primary), #22c1dc);
 }
 .student-layout__nav-item {
   cursor: pointer;
-  color: #303133;
+  color: #606266;
   font-size: 14px;
   outline: none;
+}
+.student-layout__nav-item:hover {
+  color: var(--el-color-primary);
 }
 .student-layout__menu {
   flex: 1;
   border-bottom: none;
 }
+.student-layout__menu :deep(.el-menu-item) {
+  font-size: 14px;
+}
 .student-layout__search {
-  width: 260px;
+  width: 280px;
 }
 .student-layout__main {
   max-width: 1080px;
   width: 100%;
   margin: 0 auto;
+  padding: 24px 16px 32px;
   min-height: calc(100vh - 140px);
 }
 </style>

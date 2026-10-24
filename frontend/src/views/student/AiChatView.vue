@@ -74,7 +74,7 @@ async function onSend(): Promise<void> {
 onMounted(() => {
   messages.value.push({
     role: 'assistant',
-    content: '你好!我是新生校园知识库助手,可以回答校园知识、办事指南、活动与课程教师相关问题。AI 回答仅供参考,请以官方通知核实。'
+    content: '你好！我是新生校园知识库助手,可以回答校园知识、办事指南、活动与课程教师相关问题。AI 回答仅供参考,请以官方通知核实。'
   });
 });
 </script>
@@ -121,7 +121,7 @@ onMounted(() => {
             data-testid="ai-sources"
           >
             <div class="ai-chat__sources-title">
-              来源:
+              来源
             </div>
             <template
               v-for="(s, si) in m.sources"
@@ -157,7 +157,7 @@ onMounted(() => {
         :rows="3"
         maxlength="500"
         show-word-limit
-        placeholder="请输入你的问题,如:校园卡丢了怎么补办?"
+        placeholder="请输入你的问题,如:校园卡丢了怎么补办？"
         data-testid="ai-input"
         @keydown.enter.exact.prevent="onSend"
       />
@@ -176,20 +176,23 @@ onMounted(() => {
 
 <style scoped>
 .ai-chat__notice {
+  margin: 0 0 16px;
   color: #909399;
   font-size: 13px;
+  line-height: 1.7;
 }
 .ai-chat__list {
   height: 52vh;
   overflow-y: auto;
-  padding: 12px;
-  background: #f5f7fa;
-  border-radius: 8px;
-  margin-bottom: 12px;
+  padding: 20px;
+  background: var(--ssda-bg-page);
+  border: 1px solid #eef1f6;
+  border-radius: var(--ssda-radius-card);
+  margin-bottom: 16px;
 }
 .ai-chat__row {
   display: flex;
-  margin-bottom: 12px;
+  margin-bottom: 16px;
 }
 .ai-chat__row--user {
   justify-content: flex-end;
@@ -197,21 +200,25 @@ onMounted(() => {
 .ai-chat__bubble {
   max-width: 78%;
   background: #fff;
-  border: 1px solid #ebeef5;
-  border-radius: 8px;
-  padding: 10px 14px;
+  border: 1px solid #eef1f6;
+  border-radius: 12px;
+  border-top-left-radius: 4px;
+  padding: 12px 16px;
   font-size: 14px;
   line-height: 1.7;
+  box-shadow: var(--ssda-shadow-1);
 }
 .ai-chat__row--user .ai-chat__bubble {
-  background: #409eff;
+  background: linear-gradient(135deg, var(--el-color-primary), var(--el-color-primary-dark-2));
   color: #fff;
-  border-color: #409eff;
+  border-color: transparent;
+  border-radius: 12px;
+  border-top-right-radius: 4px;
 }
 .ai-chat__bubble--failed {
-  background: #fef0f0;
-  color: #f56c6c;
-  border-color: #fbc4c4;
+  background: var(--el-color-danger-light-9);
+  color: var(--el-color-danger);
+  border-color: var(--el-color-danger-light-8);
 }
 .ai-chat__fallback {
   margin-bottom: 8px;
@@ -220,23 +227,31 @@ onMounted(() => {
   white-space: pre-wrap;
 }
 .ai-chat__sources {
-  margin-top: 8px;
-  padding-top: 8px;
-  border-top: 1px dashed #ebeef5;
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px dashed #e4e9f2;
   font-size: 12px;
 }
 .ai-chat__sources-title {
+  margin-bottom: 6px;
   color: #909399;
 }
 .ai-chat__source-item {
-  display: block;
-  color: #409eff;
+  display: inline-block;
+  margin: 0 8px 6px 0;
+  padding: 3px 10px;
+  background: var(--el-color-primary-light-9);
+  border-radius: 6px;
+  color: var(--el-color-primary);
   text-decoration: none;
-  margin-top: 2px;
+  transition: background 0.2s ease;
+}
+.ai-chat__source-item:hover {
+  background: var(--el-color-primary-light-8);
 }
 .ai-chat__input {
   display: flex;
-  gap: 8px;
+  gap: 12px;
   align-items: flex-end;
 }
 </style>

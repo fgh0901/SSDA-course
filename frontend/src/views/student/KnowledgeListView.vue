@@ -86,7 +86,12 @@ onMounted(async () => {
 
 <template>
   <div>
-    <h1>知识库</h1>
+    <div class="page-head">
+      <h1>知识库</h1>
+      <p class="page-head__desc">
+        按分类浏览校园知识,或输入关键词检索;条目均标注来源与更新时间
+      </p>
+    </div>
     <div class="filter-bar">
       <el-input
         v-model="keyword"
@@ -161,11 +166,6 @@ onMounted(async () => {
 </template>
 
 <style scoped>
-.filter-bar {
-  display: flex;
-  gap: 8px;
-  margin-bottom: 12px;
-}
 .filter-bar__keyword {
   width: 280px;
 }
@@ -173,15 +173,11 @@ onMounted(async () => {
   width: 160px;
 }
 .filter-bar__tip {
-  margin-bottom: 12px;
+  margin-bottom: 16px;
 }
 .knowledge-list {
   display: grid;
-  gap: 12px;
+  gap: 16px;
   min-height: 120px;
-}
-.pager {
-  margin-top: 16px;
-  justify-content: flex-end;
 }
 </style>

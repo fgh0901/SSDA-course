@@ -83,7 +83,12 @@ onMounted(() => {
 
 <template>
   <div>
-    <h1>搜索结果</h1>
+    <div class="page-head">
+      <h1>搜索结果</h1>
+      <p class="page-head__desc">
+        汇聚知识、办事指南、活动、课程、教师与地点的聚合检索结果
+      </p>
+    </div>
     <div class="filter-bar">
       <el-input
         v-model="keyword"
@@ -134,7 +139,7 @@ onMounted(() => {
         >
           <div class="group__header">
             <h3 class="group__title">
-              {{ TYPE_OPTIONS.find((o) => o.value === g.type)?.label }}({{ g.total }})
+              {{ TYPE_OPTIONS.find((o) => o.value === g.type)?.label }} · 共 {{ g.total }} 条
             </h3>
             <el-button
               v-if="g.total > g.items.length"
@@ -169,11 +174,6 @@ onMounted(() => {
 </template>
 
 <style scoped>
-.filter-bar {
-  display: flex;
-  gap: 8px;
-  margin-bottom: 12px;
-}
 .filter-bar__keyword {
   width: 320px;
 }
@@ -186,23 +186,36 @@ onMounted(() => {
   justify-content: space-between;
 }
 .group__title {
-  margin: 8px 0;
+  margin: 8px 0 12px;
+  font-size: 15px;
 }
 .group__item {
-  margin-bottom: 8px;
+  margin-bottom: 12px;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.group__item:hover {
+  transform: translateY(-2px);
+}
+.group__item :deep(.el-card__body) {
+  padding: 16px 20px;
 }
 .group__item-title {
   font-weight: 600;
-  color: #303133;
+  color: var(--el-text-color-primary);
   text-decoration: none;
 }
 .group__item-title:hover {
-  color: #409eff;
+  color: var(--el-color-primary);
 }
 .group__item-summary {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
   margin: 6px 0;
   color: #606266;
   font-size: 13px;
+  line-height: 1.7;
 }
 .group__item-time {
   color: #909399;

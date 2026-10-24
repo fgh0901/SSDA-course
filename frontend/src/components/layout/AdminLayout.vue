@@ -12,7 +12,7 @@ const auth = useAuthStore();
 const activeMenu = computed(() => route.path);
 
 async function onLogout(): Promise<void> {
-  await ElMessageBox.confirm('确定退出登录吗?', '退出登录', { type: 'warning' });
+  await ElMessageBox.confirm('确定退出登录吗？', '退出登录', { type: 'warning' });
   auth.logout();
   router.push('/admin/login');
 }
@@ -25,6 +25,10 @@ async function onLogout(): Promise<void> {
       class="admin-layout__aside"
     >
       <div class="admin-layout__brand">
+        <span
+          class="admin-layout__brand-dot"
+          aria-hidden="true"
+        />
         SSDA 管理后台
       </div>
       <el-menu
@@ -32,30 +36,36 @@ async function onLogout(): Promise<void> {
         :default-active="activeMenu"
         class="admin-layout__menu"
       >
-        <el-menu-item index="/admin/knowledge">
-          知识管理
-        </el-menu-item>
-        <el-menu-item index="/admin/categories">
-          分类管理
-        </el-menu-item>
-        <el-menu-item index="/admin/services">
-          办事指南管理
-        </el-menu-item>
-        <el-menu-item index="/admin/activities">
-          活动管理
-        </el-menu-item>
-        <el-menu-item index="/admin/locations">
-          地点管理
-        </el-menu-item>
-        <el-menu-item index="/admin/courses-teachers">
-          课程教师管理
-        </el-menu-item>
-        <el-menu-item index="/admin/expired">
-          过期信息工作台
-        </el-menu-item>
-        <el-menu-item index="/admin/ai-logs">
-          AI 对话记录
-        </el-menu-item>
+        <el-menu-item-group title="内容管理">
+          <el-menu-item index="/admin/knowledge">
+            知识管理
+          </el-menu-item>
+          <el-menu-item index="/admin/categories">
+            分类管理
+          </el-menu-item>
+          <el-menu-item index="/admin/expired">
+            过期信息工作台
+          </el-menu-item>
+        </el-menu-item-group>
+        <el-menu-item-group title="信息维护">
+          <el-menu-item index="/admin/services">
+            办事指南管理
+          </el-menu-item>
+          <el-menu-item index="/admin/activities">
+            活动管理
+          </el-menu-item>
+          <el-menu-item index="/admin/locations">
+            地点管理
+          </el-menu-item>
+          <el-menu-item index="/admin/courses-teachers">
+            课程教师管理
+          </el-menu-item>
+        </el-menu-item-group>
+        <el-menu-item-group title="质量运维">
+          <el-menu-item index="/admin/ai-logs">
+            AI 对话记录
+          </el-menu-item>
+        </el-menu-item-group>
       </el-menu>
     </el-aside>
     <el-container>
@@ -87,33 +97,62 @@ async function onLogout(): Promise<void> {
   min-height: 100vh;
 }
 .admin-layout__aside {
-  border-right: 1px solid #ebeef5;
+  border-right: 1px solid #eef1f6;
   background: #fff;
 }
 .admin-layout__brand {
-  padding: 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 20px 16px 12px;
   font-size: 16px;
   font-weight: 700;
-  color: #409eff;
+  letter-spacing: 0.5px;
+  color: var(--el-color-primary);
+}
+.admin-layout__brand-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 3px;
+  background: linear-gradient(135deg, var(--el-color-primary), #22c1dc);
 }
 .admin-layout__menu {
   border-right: none;
+  padding: 0 12px 16px;
+}
+.admin-layout__menu :deep(.el-menu-item-group__title) {
+  padding: 16px 12px 6px;
+  font-size: 12px;
+  color: #a0a6ad;
+}
+.admin-layout__menu :deep(.el-menu-item) {
+  height: 44px;
+  margin: 2px 0;
+  border-radius: 8px;
+}
+.admin-layout__menu :deep(.el-menu-item.is-active) {
+  background: var(--el-color-primary-light-9);
+  font-weight: 600;
 }
 .admin-layout__header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  border-bottom: 1px solid #ebeef5;
+  border-bottom: 1px solid #eef1f6;
   background: #fff;
 }
 .admin-layout__title {
-  font-size: 14px;
-  color: #606266;
+  font-size: 13px;
+  color: #909399;
 }
 .admin-layout__user {
   display: flex;
   align-items: center;
   gap: 12px;
   font-size: 14px;
+}
+.admin-layout__main {
+  padding: 24px;
+  background: var(--ssda-bg-page);
 }
 </style>

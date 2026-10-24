@@ -67,7 +67,7 @@ async function onDelete(row: AdminCategory): Promise<void> {
   const tip =
     row.knowledgeCount > 0
       ? `该分类下仍有 ${row.knowledgeCount} 条知识,删除将被拒绝,请先迁移或删除。`
-      : `确认删除分类「${row.name}」?`;
+      : `确认删除分类「${row.name}」？`;
   await ElMessageBox.confirm(tip, '删除确认', { type: 'warning' });
   try {
     await deleteCategory(row.id); // 409:拦截器展示后端 message(含条数)
@@ -88,7 +88,12 @@ onMounted(fetchList);
 <template>
   <div>
     <div class="toolbar">
-      <h2>分类管理</h2>
+      <div class="page-head">
+        <h2>分类管理</h2>
+        <p class="page-head__desc">
+          维护知识分类的名称、排序与启用状态;停用后学生端导航不再展示
+        </p>
+      </div>
       <el-button
         type="success"
         data-testid="category-create"
@@ -168,6 +173,9 @@ onMounted(fetchList);
           </el-button>
         </template>
       </el-table-column>
+      <template #empty>
+        <el-empty description="暂无分类,点击右上角新增" />
+      </template>
     </el-table>
 
     <el-dialog
@@ -237,12 +245,12 @@ onMounted(fetchList);
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 12px;
+  margin-bottom: 16px;
 }
-.toolbar h2 {
-  margin: 0;
+.toolbar .page-head {
+  margin-bottom: 0;
 }
 .count-warn {
-  color: #e6a23c;
+  color: var(--el-color-warning);
 }
 </style>

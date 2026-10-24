@@ -129,7 +129,7 @@ async function onSave(): Promise<void> {
 const operating = ref(false);
 
 async function onSubmitReview(row: KnowledgeItem): Promise<void> {
-  await ElMessageBox.confirm(`确认提交「${row.title}」进入审核?`, '提交审核', { type: 'info' });
+  await ElMessageBox.confirm(`确认提交「${row.title}」进入审核？`, '提交审核', { type: 'info' });
   operating.value = true;
   try {
     await submitReview(row.id);
@@ -178,7 +178,7 @@ async function onReview(): Promise<void> {
 }
 
 async function onTakedown(row: KnowledgeItem): Promise<void> {
-  await ElMessageBox.confirm(`确认下架「${row.title}」?下架后学生端立即不可见。`, '下架确认', { type: 'warning' });
+  await ElMessageBox.confirm(`确认下架「${row.title}」？下架后学生端立即不可见。`, '下架确认', { type: 'warning' });
   operating.value = true;
   try {
     await takedownKnowledge(row.id);
@@ -190,7 +190,7 @@ async function onTakedown(row: KnowledgeItem): Promise<void> {
 }
 
 async function onDelete(row: KnowledgeItem): Promise<void> {
-  await ElMessageBox.confirm(`确认删除「${row.title}」?仅草稿可删除,删除后不可恢复。`, '删除确认', { type: 'warning' });
+  await ElMessageBox.confirm(`确认删除「${row.title}」？仅草稿可删除,删除后不可恢复。`, '删除确认', { type: 'warning' });
   try {
     await deleteKnowledge(row.id); // 409 时拦截器已展示后端 message(如"仅草稿状态的知识可删除")
     ElMessage.success('已删除');
@@ -234,6 +234,12 @@ onMounted(async () => {
 
 <template>
   <div>
+    <div class="page-head">
+      <h1>知识管理</h1>
+      <p class="page-head__desc">
+        维护知识条目的新增、编辑、审核与上下架;学生端仅展示已发布内容
+      </p>
+    </div>
     <div class="toolbar">
       <el-tabs
         v-model="statusFilter"
@@ -383,7 +389,7 @@ onMounted(async () => {
         </template>
       </el-table-column>
       <template #empty>
-        <el-empty description="暂无数据" />
+        <el-empty description="暂无知识,可调整筛选条件或新增" />
       </template>
     </el-table>
 
@@ -579,7 +585,7 @@ onMounted(async () => {
   align-items: flex-end;
   justify-content: space-between;
   gap: 16px;
-  margin-bottom: 8px;
+  margin-bottom: 16px;
 }
 .toolbar__tabs {
   flex: 1;

@@ -122,7 +122,7 @@ async function onSave(): Promise<void> {
 }
 
 async function onDelete(row: ServiceItem): Promise<void> {
-  await ElMessageBox.confirm(`确认删除「${row.title}」?`, '删除确认', { type: 'warning' });
+  await ElMessageBox.confirm(`确认删除「${row.title}」？`, '删除确认', { type: 'warning' });
   await deleteService(row.id);
   ElMessage.success('已删除');
   void fetchList();
@@ -142,7 +142,12 @@ onMounted(async () => {
 <template>
   <div>
     <div class="toolbar">
-      <h2>办事指南管理</h2>
+      <div class="page-head">
+        <h2>办事指南管理</h2>
+        <p class="page-head__desc">
+          维护办事指南的部门、地点、时间、材料与流程;停用后学生端不可见
+        </p>
+      </div>
       <div class="toolbar__actions">
         <el-input
           v-model="keyword"
@@ -225,7 +230,7 @@ onMounted(async () => {
         </template>
       </el-table-column>
       <template #empty>
-        <el-empty description="暂无数据" />
+        <el-empty description="暂无指南,可调整关键词或新增" />
       </template>
     </el-table>
 
@@ -335,10 +340,10 @@ onMounted(async () => {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 12px;
+  margin-bottom: 16px;
 }
-.toolbar h2 {
-  margin: 0;
+.toolbar .page-head {
+  margin-bottom: 0;
 }
 .toolbar__actions {
   display: flex;
@@ -346,9 +351,5 @@ onMounted(async () => {
 }
 .toolbar__keyword {
   width: 220px;
-}
-.pager {
-  margin-top: 16px;
-  justify-content: flex-end;
 }
 </style>

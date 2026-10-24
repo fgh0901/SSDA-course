@@ -55,7 +55,12 @@ onMounted(async () => {
 
 <template>
   <div>
-    <h1>办事指南</h1>
+    <div class="page-head">
+      <h1>办事指南</h1>
+      <p class="page-head__desc">
+        校园卡、报修、网络等高频事务的办理部门、地点、时间与材料
+      </p>
+    </div>
     <div class="filter-bar">
       <el-input
         v-model="keyword"
@@ -120,7 +125,7 @@ onMounted(async () => {
         min-width="180"
       >
         <template #default="{ row }">
-          <span v-if="row.location">{{ row.location.building }} {{ row.location.room || '' }}({{ row.location.name }})</span>
+          <span v-if="row.location">{{ row.location.building }} {{ row.location.room || '' }}（{{ row.location.name }}）</span>
           <span v-else>—</span>
         </template>
       </el-table-column>
@@ -155,11 +160,6 @@ onMounted(async () => {
 </template>
 
 <style scoped>
-.filter-bar {
-  display: flex;
-  gap: 8px;
-  margin-bottom: 12px;
-}
 .filter-bar__keyword {
   width: 260px;
 }
@@ -167,10 +167,6 @@ onMounted(async () => {
   width: 220px;
 }
 .filter-bar__tip {
-  margin-bottom: 12px;
-}
-.pager {
-  margin-top: 16px;
-  justify-content: flex-end;
+  margin-bottom: 16px;
 }
 </style>

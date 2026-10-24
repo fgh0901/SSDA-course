@@ -33,7 +33,10 @@ onMounted(fetchDetail);
 </script>
 
 <template>
-  <div v-loading="loading">
+  <div
+    v-loading="loading"
+    class="detail"
+  >
     <template v-if="detail">
       <h1>{{ detail.title }}</h1>
       <el-descriptions
@@ -78,8 +81,18 @@ onMounted(fetchDetail);
 </template>
 
 <style scoped>
+.detail {
+  background: #fff;
+  border-radius: var(--ssda-radius-card);
+  border: 1px solid #eef1f6;
+  box-shadow: var(--ssda-shadow-1);
+  padding: 24px 28px;
+}
 .detail__desc {
   margin-top: 8px;
+}
+.detail__desc :deep(.el-descriptions__label) {
+  width: 96px;
 }
 .detail__back {
   margin-top: 24px;

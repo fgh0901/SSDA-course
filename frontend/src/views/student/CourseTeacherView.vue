@@ -98,7 +98,12 @@ onMounted(fetchCourses);
 
 <template>
   <div>
-    <h1>课程与教师查询</h1>
+    <div class="page-head">
+      <h1>课程与教师查询</h1>
+      <p class="page-head__desc">
+        查询课程、教师及其任教关系;点击表格行查看详情,任课信息以教务系统课表为准
+      </p>
+    </div>
     <el-tabs
       v-model="activeTab"
       @tab-change="onTabChange"
@@ -262,7 +267,7 @@ onMounted(fetchCourses);
     >
       <div v-loading="detailLoading">
         <template v-if="courseDetail">
-          <h2>{{ courseDetail.name }}({{ courseDetail.code }})</h2>
+          <h2>{{ courseDetail.name }}（{{ courseDetail.code }}）</h2>
           <p class="muted">
             {{ courseDetail.description || '暂无课程简介' }}
           </p>
@@ -355,20 +360,14 @@ onMounted(fetchCourses);
 </template>
 
 <style scoped>
-.filter-bar {
-  display: flex;
-  gap: 8px;
-  margin-bottom: 12px;
-}
 .filter-bar__keyword {
   width: 260px;
 }
-.pager {
-  margin-top: 16px;
-  justify-content: flex-end;
-}
 .rel-desc {
   margin-bottom: 12px;
+}
+.rel-desc :deep(.el-descriptions__label) {
+  width: 88px;
 }
 .muted {
   color: #909399;
