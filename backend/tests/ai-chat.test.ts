@@ -24,7 +24,9 @@ const SESSION_EMPTY = 'b2222222-3333-4777-8888-999999999999';
 const SESSION_SECRET = 'c3333333-4444-4aaa-8bbb-cccccccccccc';
 const SESSION_SHORT = 'd4444444-5555-4666-8777-888888888888';
 const SESSION_DBFAIL = 'e5555555-6666-4777-8888-aaaaaaaaaaaa';
-const AI_SESSION_KEYS = [SESSION_ID, SESSION_EMPTY, SESSION_SECRET, SESSION_SHORT, SESSION_DBFAIL];
+// Phase 3 补充:Key 未配置用例专用会话(不与既有会话混用,避免影响 total 断言)
+const SESSION_NOKEY = 'e5555555-6666-4777-8888-bbbbbbbbbbbb';
+const AI_SESSION_KEYS = [SESSION_ID, SESSION_EMPTY, SESSION_SECRET, SESSION_SHORT, SESSION_DBFAIL, SESSION_NOKEY];
 
 beforeAll(async () => {
   await cleanupByMark();
@@ -145,6 +147,25 @@ describe('AI 对话降级全链路(POST /api/ai/chat,契约 2.15/第 4 节,FR-13
     );
     const names = cols.map((c) => c.COLUMN_NAME).join(',');
     expect(names).not.toMatch(/user|student|ip|device|account/i);
+  });
+
+  // Phase 3(02 设计 §1 降级判定):依赖本文件环境未配置 DEEPSEEK_API_KEY(backend/.env 该键为空);
+  // 若日后 .env 配置真实 Key,本用例语义需随工厂行为同步调整
+  it('Key 未配置:不发起 HTTP(fetch 未被调用),检索命中走降级模板', async () => {
+    const fetchSpy = jest.spyOn(global, 'fetch');
+    try {
+      const res = await request(app)
+        .post('/api/ai/chat')
+        .send({ sessionId: SESSION_NOKEY, message: '校园卡丢了怎么补办?' });
+      expect(res.status).toBe(200);
+      expect(fetchSpy).not.toHaveBeenCalled();
+      const d = res.body.data;
+      expect(d.mode).toBe('fallback');
+      expect(d.answer).toContain('降级模式');
+      expect(d.sources.length).toBeGreaterThanOrEqual(1);
+    } finally {
+      fetchSpy.mockRestore();
+    }
   });
 });
 

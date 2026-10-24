@@ -87,3 +87,21 @@
   4. **C4 验收**:lint/test(119+新增)/build 全绿;小步两笔提交(adapter 一笔;双模式测试一笔),各自只 add backend/ 与本 worklog;.env 不提交。
 - 边界:只写 backend/ 与本 worklog;不碰 frontend/、db/、skills;不 git push;MySQL 仅用 ssda/ssda_test;3000 端口运行中服务不受影响(tsx watch 热载属预期)。
 - 已知事实:jest 以 --runInBand 串行;现有 ai-chat.test.ts 16 用例(任务 2 后共 119)不得破坏。
+
+### 任务 3 执行记录(2026-10-24)
+
+- **C1 DeepSeekAdapter 实装**(`src/ai/llm/deepseek-adapter.ts`):OpenAI 兼容 `POST {DEEPSEEK_BASE_URL}/chat/completions`(去尾部斜杠),Headers `Authorization: Bearer` + `Content-Type: application/json`;body `{model: env.DEEPSEEK_MODEL, messages[system,user], temperature 0.3, max_tokens 600, stream:false}`(max_tokens 600 按设计 §3.2/§4 补齐);AbortController + `LLM_TIMEOUT_MS`(默认 20s)超时(finally 清 timer);解析 `choices[0].message.content`,非 2xx/网络错误/空内容/JSON 结构异常一律抛 `LlmError`;`src/ai/llm/index.ts` 仅更新注释,工厂逻辑未变。
+- **C2 ChatService 双模式复核:零代码改动**。Phase 2 既有 `src/ai/chat-service.ts` 已完整满足:isReliable=false 不调 LLM 拒答(sources=[]);isReliable=true 调 LLM,成功 mode='deepseek',LlmError/其他异常均降级 mode='fallback' 并 console.warn 记日志;assistant 落库复用既有 try/catch 不阻塞;latency_ms=检索+生成总耗时。**注入防线落位决策**:system message = system prompt v1 全文 + 资料编号块(资料为服务端已发布数据,允许进 system),user message = 用户原文逐字透传——与 02 设计 §3.1 描述完全一致,无口径冲突,无需偏离红线。
+- **C3 测试(共新增 10 条,≥7 达标)**:
+  - 新建 `tests/ai-chat-llm.test.ts`(9 条):LLM 200(mode/answer/sources + URL/Authorization/Content-Type/model/temperature/stream/max_tokens 请求契约)、消息组装(system 含 [1] 与条目标题、user 仅原文)、超时(fetch mock 挂起至 AbortController 真实中止)、HTTP 500、畸形 JSON(json 抛 SyntaxError)、choices 空、拒答红线(Key 已配置仍不调 LLM)、注入防线(注入文本仅在 user message,system 保持 v1 原文)、deepseek 模式落库 latency_ms≥0。
+  - `tests/ai-chat.test.ts` 追加 1 条:Key 未配置 → fetch 不被调用走降级(独立 SESSION_NOKEY,不影响既有 total 断言)。
+  - 文件级 Key 注入机制:`tests/helpers/llm-env.ts` 作为测试文件**首个 import** 在 env.ts 求值前注入"Key 已配置"(顶层副作用,ES import 提升导致普通语句不可靠);DEEPSEEK_BASE_URL 指向 127.0.0.1:59999(mock 失效也仅本地快速失败,绝不打外网);LLM_TIMEOUT_MS=500 便于超时用例;afterAll 恢复 env,防止 --runInBand 同进程泄漏到后续文件。
+  - 过程修正:注入问句最初把注入文本放在句首,长问句 2-gram 轮询合并总量上限(12)截断了靠后的 KB 关键词 → 检索零命中误走拒答;改为真实问题在前、注入文本在后(注入语义不受语序影响,注入目标相对 user message 恒为"以上指令")。
+- **C4 验收**:`npm run lint` ✅、`npm test` **16 套件 129 用例**(119+10)全绿 ✅、`npm run build` ✅。MySQL 仅用 ssda_test(globalSetup 重建,数据用后清理);frontend/、db/、skills、契约未触碰;未 push。
+- **提交纪律执行**:C1 一笔 `feat(ai): implement deepseek adapter (openai-compatible, timeout, abort)`(43bd215);C2+C3 一笔(见 git log,仅 backend/tests×3 与本 worklog;.env 未提交)。
+- **上报总控**:
+  1. **真实联调待 Key**:HTTP 分支已全部由 fetch mock 覆盖且代码就绪,Key 就绪后仅改 `backend/.env` 即启用,无需再改代码;建议届时跑一次真实冒烟(校验 base_url/模型名/配额)。
+  2. **"Key 未配置"用例的环境依赖**:该用例依赖 `.env` 中 `DEEPSEEK_API_KEY` 为空的现状(已注释标注);日后配置真实 Key 后该用例需按工厂新行为同步调整。
+  3. **提交信息计数**:任务书预设 "(+7 tests)",实际新增 10 条,按事实写为 "(+10 tests)",如需严格照抄预设文案可一笔 amend。
+  4. **设计文档路径出入(未改文档)**:02 设计 §2/§4 注释路径为 `backend/src/services/ai/...`,实际实现位于 `backend/src/ai/...`(Phase 2 既有结构);请总控下轮同步文档。
+  5. **测试运行口径**:AI 两套件与其他套件共用 `TCK-` 前缀清理,必须以 `npm test`(即 `jest --runInBand`)运行;并行 worker 下 beforeAll/afterAll 互删数据会大面积误报(实测确认,属既有 MARK 清理机制的固有约束,非本次引入)。
