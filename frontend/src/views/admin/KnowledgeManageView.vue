@@ -345,7 +345,6 @@ onMounted(async () => {
       <el-table-column
         label="操作"
         width="300"
-        fixed="right"
       >
         <template #default="{ row }">
           <el-button
@@ -477,25 +476,34 @@ onMounted(async () => {
           label="有效期起"
           prop="effectiveFrom"
         >
-          <el-date-picker
-            v-model="form.effectiveFrom"
+          <!-- el-date-picker 根为 tooltip 组件,指令须挂真实 DOM 宿主才能捕获内层 input 事件(D-MED-2) -->
+          <div
             v-date-guard
-            type="date"
-            value-format="YYYY-MM-DD"
-            placeholder="YYYY-MM-DD"
-          />
+            class="date-guard-host"
+          >
+            <el-date-picker
+              v-model="form.effectiveFrom"
+              type="date"
+              value-format="YYYY-MM-DD"
+              placeholder="YYYY-MM-DD"
+            />
+          </div>
         </el-form-item>
         <el-form-item
           label="有效期止"
           prop="effectiveUntil"
         >
-          <el-date-picker
-            v-model="form.effectiveUntil"
+          <div
             v-date-guard
-            type="date"
-            value-format="YYYY-MM-DD"
-            placeholder="可选,不早于有效期起"
-          />
+            class="date-guard-host"
+          >
+            <el-date-picker
+              v-model="form.effectiveUntil"
+              type="date"
+              value-format="YYYY-MM-DD"
+              placeholder="可选,不早于有效期起"
+            />
+          </div>
         </el-form-item>
         <el-form-item label="核实状态">
           <el-switch

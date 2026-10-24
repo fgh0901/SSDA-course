@@ -112,15 +112,20 @@ onMounted(fetchList);
         class="toolbar__session"
         @keyup.enter="onSearch"
       />
-      <el-date-picker
-        v-model="dateRange"
+      <!-- el-date-picker 根为 tooltip 组件,指令须挂真实 DOM 宿主才能捕获内层 input 事件(D-MED-2) -->
+      <div
         v-date-guard
-        type="daterange"
-        value-format="YYYY-MM-DD"
-        start-placeholder="开始日期"
-        end-placeholder="结束日期"
-        @change="onDateRangeChange"
-      />
+        class="date-guard-host"
+      >
+        <el-date-picker
+          v-model="dateRange"
+          type="daterange"
+          value-format="YYYY-MM-DD"
+          start-placeholder="开始日期"
+          end-placeholder="结束日期"
+          @change="onDateRangeChange"
+        />
+      </div>
       <el-button
         type="primary"
         @click="onSearch"

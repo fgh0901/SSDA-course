@@ -291,25 +291,34 @@ onMounted(async () => {
           label="开始时间"
           prop="startTime"
         >
-          <el-date-picker
-            v-model="form.startTime"
+          <!-- el-date-picker 根为 tooltip 组件,指令须挂真实 DOM 宿主才能捕获内层 input 事件(D-MED-2) -->
+          <div
             v-date-guard
-            type="datetime"
-            value-format="YYYY-MM-DD HH:mm:ss"
-            placeholder="YYYY-MM-DD HH:mm:ss"
-          />
+            class="date-guard-host"
+          >
+            <el-date-picker
+              v-model="form.startTime"
+              type="datetime"
+              value-format="YYYY-MM-DD HH:mm:ss"
+              placeholder="YYYY-MM-DD HH:mm:ss"
+            />
+          </div>
         </el-form-item>
         <el-form-item
           label="结束时间"
           prop="endTime"
         >
-          <el-date-picker
-            v-model="form.endTime"
+          <div
             v-date-guard
-            type="datetime"
-            value-format="YYYY-MM-DD HH:mm:ss"
-            placeholder="不早于开始时间"
-          />
+            class="date-guard-host"
+          >
+            <el-date-picker
+              v-model="form.endTime"
+              type="datetime"
+              value-format="YYYY-MM-DD HH:mm:ss"
+              placeholder="不早于开始时间"
+            />
+          </div>
         </el-form-item>
         <el-form-item label="活动地点">
           <el-select

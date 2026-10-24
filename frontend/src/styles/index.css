@@ -195,3 +195,8 @@ a:hover {
 .el-empty {
   padding: 32px 0;
 }
+
+/* 日期非法手输守卫宿主(utils/dateGuard,D-MED-2):仅作事件捕获层,不参与布局 */
+.date-guard-host {
+  display: contents;
+}

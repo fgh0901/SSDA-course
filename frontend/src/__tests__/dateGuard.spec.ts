@@ -54,6 +54,14 @@ describe('v-date-guard 日期非法手输守卫(D-MED-2)', () => {
     expect(elMessageError).toHaveBeenCalled();
   });
 
+  it('手输 2026-02-30 后失焦(blur):EP 在捕获阶段监听 blur 提交,同样阻断(D-MED-2)', () => {
+    const wrapper = mount(TestComp);
+    setRaw(wrapper, '2026-02-30');
+    const propagated = fireInputEvent(wrapper, 'blur');
+    expect(propagated).toBe(false);
+    expect(elMessageError).toHaveBeenCalledWith('日期不合法,请选择真实存在的日期');
+  });
+
   it('合法日期(2027-04-09)回车:放行,不提示', () => {
     const wrapper = mount(TestComp);
     setRaw(wrapper, '2027-04-09');

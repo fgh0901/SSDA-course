@@ -4,9 +4,10 @@ import { isDateString } from './datetime';
 
 // 日期选择器非法手输守卫(GUI 验收 D-MED-2):
 // el-date-picker 会把手输的 2026-13-99 按日历溢出规则静默解析为 2027-04-09 并正常提交,
-// 表单规则(校验 model 值)无法感知原始输入。本指令在日期选择器根元素上以捕获阶段监听
-// 内层 input 的 keydown(Enter)/change 事件——先于组件自身的提交处理,原始文本为
-// "YYYY-MM-DD 完整日期前缀"且不是真实存在日期时阻断提交并提示。
+// 表单规则(校验 model 值)无法感知原始输入。EP 的提交路径有三条,均在内层 input 上监听:
+// ① Enter 键提交(keydown);② 原生 change 提交;③ 失焦提交(EP 在自身 wrapper 上以捕获阶段
+// 监听 blur,在 afterBlur 中解析提交)。本指令挂在日期选择器外层的真实 DOM 宿主上,以捕获阶段
+// 先于组件处理三类事件——原始文本为"YYYY-MM-DD 完整日期前缀"且不是真实存在日期时阻断提交并提示。
 // 点选日历面板的值始终合法,不受影响。
 
 const DATE_PREFIX_RE = /^(\d{4}-\d{2}-\d{2})/;
@@ -40,9 +41,11 @@ export const vDateGuard: Directive<GuardHolder> = {
     el.__ssdaDateGuardKeydown = guardKeydown;
     el.addEventListener('change', guard, true);
     el.addEventListener('keydown', guardKeydown, true);
+    el.addEventListener('blur', guard, true);
   },
   unmounted(el) {
     if (el.__ssdaDateGuardChange) el.removeEventListener('change', el.__ssdaDateGuardChange, true);
     if (el.__ssdaDateGuardKeydown) el.removeEventListener('keydown', el.__ssdaDateGuardKeydown, true);
+    if (el.__ssdaDateGuardChange) el.removeEventListener('blur', el.__ssdaDateGuardChange, true);
   }
 };
