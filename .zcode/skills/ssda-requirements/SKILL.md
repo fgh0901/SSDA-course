@@ -71,7 +71,7 @@ API 契约相关走 `ssda-api-contract`;代码走 `ssda-backend`/`ssda-frontend`
 
 ## 4. 追溯矩阵写法(设计 → FR → TC 双向)
 
-矩阵存放在 `docs/requirements/requirements-traceability.md`(由需求/设计 Agent 建立并维护)。
+矩阵**内嵌在 `docs/design/api-contract.md` 第 5 节**(总控裁决 2026-10-24:契约内嵌为准,保证与接口定义同步更新,不另建独立文件;如未来需要独立需求文档再抽取)。
 
 **正向**(设计文档里写):每个设计产物必须标明覆盖的 FR 与验证它的 TC。
 
@@ -110,10 +110,8 @@ API 契约相关走 `ssda-api-contract`;代码走 `ssda-backend`/`ssda-frontend`
 docs/
 ├── design/
 │   ├── 00-project-brief.md      # 已存在,勿改
-│   ├── api-contract.md          # 契约,由总控冻结/修订
+│   ├── api-contract.md          # 契约,由总控冻结/修订;追溯矩阵内嵌于第 5 节
 │   └── NN-<主题>.md             # 其他设计文档:两位序号 + kebab-case
-├── requirements/
-│   └── requirements-traceability.md
 ├── worklogs/                    # 各 Agent 工作日志(worklog-<agent>.md)
 └── ai-logs/                     # AI 使用日志,见 ssda-ai-log
 ```

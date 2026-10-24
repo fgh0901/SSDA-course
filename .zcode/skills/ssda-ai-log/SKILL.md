@@ -80,12 +80,12 @@ docs/ai-logs/
 
 ## 4. 系统内对话导出:`npm run export:ai-logs`(脚本见 4a 节)
 
-- 位置:后端 `package.json` scripts,如 `"export:ai-logs": "ts-node scripts/export-ai-logs.ts"`。
+- 位置:后端 `package.json` scripts,如 `"export:ai-logs": "tsx src/scripts/export-ai-logs.ts"`(本项目用 tsx,不用 ts-node)。
 - 行为:读取 `ai_chat_session` + `ai_chat_message`,输出到 `docs/ai-logs/exports/ai-chat-export-YYYYMMDD-HHmm.jsonl`。
 - 格式:**每行一个 JSON 对象**,字段如下(与表结构对应,snake_case 在导出层转 camelCase):
 
 ```json
-{"sessionId":"uuid","role":"user|assistant","content":"…","sources":[{"id":12,"title":"校园卡补办"}],"mode":"llm|fallback","createdAt":"2026-10-24T10:00:00+08:00"}
+{"sessionId":"uuid","role":"user|assistant","content":"…","sources":[{"type":"knowledge","id":12,"title":"校园卡补办"}],"mode":"deepseek|fallback","createdAt":"2026-10-24 10:00:00"}
 ```
 
 - `mode=fallback` 的行即降级回答,便于统计降级率(鲁棒性证据)。

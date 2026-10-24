@@ -31,7 +31,7 @@ description: SSDA 项目的 API 契约与接口约定。凡是设计新接口、
 失败:
 
 ```json
-{ "success": false, "error": { "code": "INVALID_PARAM", "message": "标题不能为空" } }
+{ "success": false, "error": { "code": "VALIDATION_ERROR", "message": "标题不能为空" } }
 ```
 
 硬性规则:
@@ -72,7 +72,7 @@ description: SSDA 项目的 API 契约与接口约定。凡是设计新接口、
 
 业务错误码推荐(首次登记契约时按此表):
 
-`INVALID_PARAM`(400)、`UNAUTHORIZED`(401)、`FORBIDDEN`(403)、`NOT_FOUND`(404)、`INTERNAL_ERROR`(500);业务态可扩展如 `KNOWLEDGE_EXPIRED`。
+`VALIDATION_ERROR`(400)、`UNAUTHORIZED`(401)、`FORBIDDEN`(403)、`NOT_FOUND`(404)、`CONFLICT`(409)、`INTERNAL_ERROR`(500);业务态可扩展如 `KNOWLEDGE_EXPIRED`。(总控裁决 2026-10-24:统一 VALIDATION_ERROR,废弃 INVALID_PARAM)
 
 ## 7. 当前项目接口清单(概要,细节以 api-contract.md 为准)
 
@@ -102,10 +102,11 @@ description: SSDA 项目的 API 契约与接口约定。凡是设计新接口、
 ### POST /api/ai/chat
 - 权限:公开(匿名 sessionId)
 - 请求:{ "sessionId": "string(uuid)", "message": "string(1~500)" }
-- 响应 data:{ "reply": "string", "sources": [ { "id", "title" } ], "mode": "llm" | "fallback" }
-- 错误:400 INVALID_PARAM(消息为空/超长);500 INTERNAL_ERROR
+- 响应 data:{ "answer": "string", "sources": [ { "type", "id", "title", "source", "updatedAt" } ], "mode": "deepseek" | "fallback", "retriever": "local_kb" }
+- 错误:400 VALIDATION_ERROR(消息为空/超长);500 INTERNAL_ERROR
 - 关联需求:FR-13;验证用例:见 ssda-testing 映射表
 ```
+(总控裁决 2026-10-24:字段名 answer、mode 取值 deepseek|fallback——mode 记录生成引擎身份,满足课程 AI 日志"标注使用哪个工具"要求;以 api-contract.md 为准)
 
 ## 9. 最小代码示例(与契约一致的 Express 实现)
 
