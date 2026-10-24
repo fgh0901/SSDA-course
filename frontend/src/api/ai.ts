@@ -26,16 +26,20 @@ export function getAdminAiLogs(params: AiLogQuery) {
  * 导出 AI 对话记录 JSONL(契约 3.19 ?export=1)。
  * 注:该接口为 JWT 保护,window.open 无法携带 Authorization 头,
  * 故用带 token 的 blob 请求下载,URL 参数与契约一致(已在 worklog 登记该偏差)。
+ * 注意:响应拦截器对 blob 不解包,返回值即 Blob 本身(D-MED-3:此前误取 resp.data 导致导出必然失败)。
  */
 export async function exportAiLogs(params: Pick<AiLogQuery, 'startDate' | 'endDate'>): Promise<void> {
-  const resp = await http.get<Blob>('/admin/ai-logs', {
+  const blob = await http.get<unknown, Blob>('/admin/ai-logs', {
     params: { ...params, export: 1 },
     responseType: 'blob'
   });
+  if (!(blob instanceof Blob) || blob.size === 0) {
+    throw new Error('导出内容为空,请稍后重试');
+  }
   const now = new Date();
   const pad = (n: number) => String(n).padStart(2, '0');
   const stamp = `${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}-${pad(now.getHours())}${pad(now.getMinutes())}`;
-  const url = URL.createObjectURL(resp.data);
+  const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
   a.download = `ai-chat-export-${stamp}.jsonl`;

@@ -48,9 +48,10 @@ http.interceptors.response.use(
       ElMessage.error('登录已失效,请重新登录');
     } else if (status === 403) {
       ElMessage.error('无权限执行该操作');
-    } else {
+    } else if (err.config?.responseType !== 'blob') {
       ElMessage.error(apiError.message);
     }
+    // 文件流请求(如 AI 日志导出)不在此弹错:调用方按业务给"具体原因"的导出反馈(D-MED-3),避免重复提示
     return Promise.reject(apiError);
   }
 );

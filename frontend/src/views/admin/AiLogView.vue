@@ -2,6 +2,7 @@
 import { computed, onMounted, reactive, ref } from 'vue';
 import { ElMessage } from 'element-plus';
 import { exportAiLogs, getAdminAiLogs } from '@/api/ai';
+import { vDateGuard } from '@/utils/dateGuard';
 import type { AiLogItem } from '@/types/ai';
 
 // AI 对话记录查看(03-page-spec 4.8,FR-13 审计入口):按会话折叠 + mode 标签 + 来源 + 日期过滤 + JSONL 导出
@@ -63,9 +64,11 @@ async function onExport(): Promise<void> {
   try {
     // 导出文件含对话原文:提交前需脱敏,不入 git(03-page-spec 4.8)
     await exportAiLogs({ startDate: filters.startDate || undefined, endDate: filters.endDate || undefined });
-    ElMessage.success('已导出 JSONL 文件');
-  } catch {
-    ElMessage.error('导出失败,请稍后重试');
+    ElMessage.success('导出成功,已开始下载');
+  } catch (err) {
+    // 拦截器对 blob 请求不弹错,由这里给具体原因,确保导出失败不静默(D-MED-3)
+    const message = (err as { message?: string }).message;
+    ElMessage.error(message || '导出失败,请稍后重试');
   } finally {
     exporting.value = false;
   }
@@ -111,6 +114,7 @@ onMounted(fetchList);
       />
       <el-date-picker
         v-model="dateRange"
+        v-date-guard
         type="daterange"
         value-format="YYYY-MM-DD"
         start-placeholder="开始日期"

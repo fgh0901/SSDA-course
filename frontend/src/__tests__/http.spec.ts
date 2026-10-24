@@ -99,6 +99,28 @@ describe('axios 响应拦截器(响应包解包)', () => {
     expect(elMessageError).toHaveBeenCalledWith('系统繁忙,请稍后重试');
   });
 
+  it('blob 请求失败:拦截器不弹错,由调用方给具体导出反馈(D-MED-3)', async () => {
+    setAdapter(async (config) => {
+      throw failWith(
+        config,
+        { success: false, error: { code: 'INTERNAL_ERROR', message: '系统繁忙,请稍后重试' } },
+        500
+      );
+    });
+    await expect(http.get('/admin/ai-logs', { responseType: 'blob' })).rejects.toMatchObject({
+      code: 'INTERNAL_ERROR'
+    });
+    expect(elMessageError).not.toHaveBeenCalled();
+  });
+
+  it('blob 请求成功:响应流原样返回,不走响应包解包', async () => {
+    const stream = new Blob(['{"id":1}'], { type: 'application/x-ndjson' });
+    setAdapter(async (config) => ok(config, stream));
+    const data = await http.get('/admin/ai-logs', { responseType: 'blob' });
+    expect(data).toBe(stream);
+    expect(elMessageError).not.toHaveBeenCalled();
+  });
+
   it('请求拦截器:携带本地 token 作为 Bearer 头', async () => {
     localStorage.setItem(TOKEN_KEY, 'jwt-token');
     let seenAuth = '';
