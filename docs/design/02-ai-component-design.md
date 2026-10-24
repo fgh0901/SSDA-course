@@ -27,7 +27,7 @@ flowchart TD
 ## 2. KnowledgeRetriever 接口定义
 
 ```ts
-// backend/src/services/ai/retriever/types.ts
+// backend/src/ai/retriever/types.ts
 export type SourceType = 'knowledge' | 'service' | 'activity' | 'course' | 'teacher' | 'location';
 
 export interface RetrievedSource {
@@ -102,7 +102,7 @@ export interface KnowledgeRetriever {
 ## 4. DeepSeek 适配器
 
 ```ts
-// backend/src/services/ai/llm/deepseek-adapter.ts(签名示意)
+// backend/src/ai/llm/deepseek-adapter.ts(签名示意)
 export interface LlmResult {
   answer: string;
   latencyMs: number;
