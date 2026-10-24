@@ -1,0 +1,198 @@
+# SSDA UI 设计规格(04-ui-design-spec)
+
+> 版本 v1.0(2026-10-24)。与 `03-page-spec.md` 配套:03 管"页面有什么",本文管"长什么样、怎么说话"。实现载体为 `frontend/src/styles/index.css`(全局)+ 各组件 `<style scoped>`。本文只约束视觉与文案,不改变任何页面行为与字段绑定。
+
+## 1. 设计原则
+
+1. **清新教育蓝**:主色取介于蓝与青之间的亮蓝,传达"可信 + 年轻",全部交互色由主色派生,不再引入第二种品牌色。
+2. **留白呼吸感**:8px 基数间距,页面主内容区限宽(学生端 1080px)居中,卡片内边距不小于 16px,正文行高 1.7~1.8。
+3. **状态语义一致**:四态(published/draft/pending_review/takedown)+ 过期/待核实,全端同色同词,警告但不过度惊吓(橙黄提示、红色仅用于危险操作与已下架)。
+4. **文案优雅克制**:按钮动宾结构,空态给"下一步"指引,提示用"你"而非"您"(新生社区口吻),全角标点、中英文间空格。
+
+## 2. 设计令牌(Design Tokens)
+
+### 2.1 色彩
+
+**品牌色**(以 CSS 变量落在 `:root`,浅色阶用 `color-mix()` 由主色实时派生):
+
+| 令牌 | 值 | 用途 |
+|---|---|---|
+| `--ssda-primary` | `#2b7fff` | 主按钮、链接、当前导航、选中态 |
+| 派生 | `color-mix(in srgb, 主色 N%, 白)` | light-9/8/7/5/3 背景、dark-2 hover |
+
+**中性色**:沿用 Element Plus 灰阶,页面背景在 EP `#f5f7fa` 基础上引入带蓝调的 `--ssda-bg-page: #f6f8fb`,卡片纯白,营造层次。
+
+**状态四态色**(StatusTag 与所有状态提示统一,相对 EP 默认整体加深一档以保证白底可读性):
+
+| 状态 | 语义 | 变量 | 值 |
+|---|---|---|---|
+| published 已发布 | 安全/生效 | `--el-color-success` | `#16a34a`(绿) |
+| pending_review 待审核 | 等待/注意 | `--el-color-warning` | `#d97706`(橙) |
+| draft 草稿 | 中性/未定 | `--el-color-info` | `#909399`(灰) |
+| takedown 已下架 | 禁止/危险 | `--el-color-danger` | `#dc2626`(红) |
+
+**辅助语义**:"待核实"统一 warning 橙(plain 效果),"已过期"统一 info 灰(plain 效果),过期横幅/临期识别 warning,错误气泡 danger。
+
+### 2.2 字体栈(系统中文字体优先,零网络请求)
+
+```css
+--el-font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'PingFang SC',
+  'Hiragino Sans GB', 'Microsoft YaHei', '微软雅黑', Arial, sans-serif;
+```
+
+同时开启 `-webkit-font-smoothing: antialiased`。不引入任何外部字体文件。
+
+### 2.3 字号层级
+
+| 层级 | 字号/字重 | 颜色 | 用途 |
+|---|---|---|---|
+| 页面主标题 | 22px / 600 | `#1f2d3d`(text-primary) | 各页 `h1`(首页 Hero 28px) |
+| 区块/卡片标题 | 17px / 600 | text-primary | 首页分区、卡片标题 |
+| 表单标题/次级标题 | 15px / 600 | text-primary | 管理端页头 `h2`、抽屉 `h3` |
+| 正文 | 14px / 400,行高 1.7 | `#303133` | 表格、表单、气泡、正文 |
+| 辅助文字 | 13px / 400 | `#909399` | 页头描述、meta 信息 |
+| 弱化说明 | 12px / 400 | `#909399` | 页脚、来源、时间戳 |
+
+### 2.4 间距体系(8px 基数)
+
+允许刻度:4 / 8 / 12 / 16 / 24 / 32 / 48。约定:页头与内容 16px、卡片间距 16px、卡片内边距 20px、筛选栏与列表 16px、表格与分页 20px、页面区段间 32px、Hero 区上下 48px。
+
+### 2.5 圆角
+
+| 对象 | 圆角 |
+|---|---|
+| 卡片、对话框、抽屉、Hero 区 | 12px |
+| 按钮、输入框、下拉、提示条(alert)、气泡、表格 | 8px(EP `--el-border-radius-base: 8px`) |
+| 小件(标签、开关内块) | 6px |
+| 胶囊(状态标签、悬浮按钮) | round |
+
+### 2.6 阴影两级
+
+| 令牌 | 值 | 用途 |
+|---|---|---|
+| `--ssda-shadow-1`(静置) | `0 1px 2px rgba(15, 23, 42, .04), 0 2px 6px rgba(15, 23, 42, .05)` | 卡片静置、导航条 |
+| `--ssda-shadow-2`(悬浮) | `0 8px 24px rgba(15, 23, 42, .10), 0 2px 8px rgba(15, 23, 42, .06)` | hover、弹层、悬浮按钮 |
+
+弹层(对话框/抽屉/下拉)由 EP 默认阴影保证层级,不另行覆盖。
+
+### 2.7 动效
+
+统一 EP 默认过渡时长(0.2s ease);卡片 hover 允许 `transform: translateY(-2px)` 上浮 + 阴影升为二级;禁止闪烁、滚动劫持等强动效。
+
+## 3. Element Plus 主题变量覆盖(实现于 `styles/index.css`)
+
+| 变量组 | 覆盖内容 |
+|---|---|
+| 五色主变量 + light-3/5/7/8/9 + dark-2 | primary/success/warning/danger/info 全套,浅阶用 `color-mix()` 派生,保证 tag light/plain、alert、菜单选中背景同源 |
+| `--el-border-radius-base / small / round` | 8 / 6 / 999 px |
+| `--el-font-family` | 2.2 字体栈 |
+| `--el-text-color-primary/regular/secondary` | `#1f2d3d / #303133 / #606266` |
+| `--el-table-header-bg-color / header-text-color / row-hover-bg-color` | `#f8fafc / #475569 / #f5f8ff` |
+| `--el-color-primary-light-9` | 派生浅蓝,用作菜单/行选中背景 |
+
+组件级统一(全局选择器):卡片 12px 圆角 + 一级阴影、hover 升二级;表头白底灰字加粗;`el-alert` 8px 圆角;`el-dialog` 12px 圆角;`h1/h2/h3` 层级按 2.3 重置;滚动条 8px 细样式。
+
+## 4. 组件约定
+
+### 4.1 页头(标题 + 描述)
+
+每页顶部:主标题(`h1`/管理端 `h2`)+ 一行 13px 辅助描述,说明该页回答什么问题。统一类 `.page-head`。管理端页头与操作按钮同行(标题居左、搜索/新增居右)。
+
+### 4.2 卡片
+
+白底、12px 圆角、一级阴影;`shadow="hover"` 卡片 hover 上浮 2px。卡片内边距 20px;标题行与标签同行,摘要最多两行截断(`line-clamp: 2`),meta 行 12px 灰。
+
+### 4.3 表格密度
+
+默认密度(EP 默认行高),表头 `#f8fafc` 底 + 13px 加粗灰字;行 hover 浅蓝;空状态一律 `el-empty` + 引导文案(见 5.3);分页右对齐、与表格间距 20px。
+
+### 4.4 表单布局
+
+对话框内 label 左对齐、宽度按最长 label(72~96px);必填红星由 EP 校验自动展示;占位符写"示例/格式"而非重复 label(如"如:校信息化办公室官网""YYYY-MM-DD");开关类(启用/核实状态)文案前置说明、后缀状态文字。
+
+### 4.5 空状态与加载态
+
+- 列表/详情加载:`v-loading` 蒙层(沿用,本期不新增骨架屏结构)。
+- 空态:`el-empty` + 一句话原因 + 下一句建议,句式见 5.3。
+- 无关键词进入搜索页:`el-empty`"请输入关键词开始搜索"。
+
+### 4.6 面包屑与返回
+
+单层信息架构下不引入面包屑组件;详情页统一"← 返回 xx 列表"胶囊式返回链接,悬停主色,置于正文末尾。
+
+### 4.7 状态标签(StatusTag)与过期横幅(ExpiredBanner)
+
+- StatusTag:small + round,四态色按 2.1;"待核实"warning plain、"已过期"info plain 与之并列时保持 8px 间距。
+- ExpiredBanner:warning alert(8px 圆角、柔和底色),文案为 03-page-spec 固定原文且被 `KnowledgeDetailView.spec.ts` 断言锁定(含日期外侧的半角括号),**保持原样不改**;置于详情标题上方;禁止红色 error 级(警示但不惊吓)。
+- AI 降级提示条:warning alert 弱化为"说明性提示"(小字号、浅底),随 AI 气泡出现。
+
+### 4.8 导航布局
+
+- StudentLayout:60px 白底顶栏 + 细分割线 + 一级阴影,吸顶;品牌名主色加圆点装饰;当前菜单项主色 + 2px 底线;搜索框 280px。
+- AdminLayout:220px 浅色侧边栏,菜单按"内容管理 / 信息维护 / 质量运维"三组分组(EP `el-menu-item-group`,不引入图标依赖),菜单项 44px 高、8px 圆角、左右 12px 内缩,选中项浅蓝底 + 主色文字;顶栏 56px 白底细线。
+- PageFooter:居中两行 12px 灰字(数据来源一行、AI 免责一行),顶部细线,保持 03-page-spec 固定语义不删减。
+
+### 4.9 AI 对话页气泡
+
+- 用户气泡:主色渐变(主色 → 深一档)、白字、右上 4px 小圆角,靠右。
+- AI 气泡:白底 + 边框 + 左上 4px 小圆角,靠左,行高 1.7。
+- 来源列表:气泡内卡片化(浅蓝底 6px 圆角小块、序号 + 标题),可点击。
+- 降级提示条:warning alert 置于气泡内顶部;"正在检索…"占位气泡灰字。
+
+## 5. 中文文案规范
+
+### 5.1 标点与排版
+
+- 一律全角标点:,。;:?!()「」;括号统一全角。
+- 中英文/数字之间加一个半角空格:"共 46 条知识""TC-01 用例""已过期 3 天""耗时 240 ms"。
+- 数字与单位间空格,单位用规范符号:ms、天、条、字。
+- 范围用"~":1~500 字、3~30 个字符;日期 YYYY-MM-DD。
+
+### 5.2 按钮与操作(动宾结构)
+
+新增知识 / 新增分类 / 新增指南 / 新增活动 / 新增地点 / 新增课程 / 新增教师 / 提交审核 / 审核通过 / 驳回 / 下架 / 删除 / 保存 / 搜索 / 查询 / 导出 / 移除 / 发送 / 返回首页 / 退出登录。确认对话框标题用"动作 + 确认"(如"删除确认"),正文说明后果再问"确认…?"
+
+### 5.3 空状态句式
+
+句式 = 结论 + 建议,不写"无数据"冷话术:
+
+| 场景 | 文案 |
+|---|---|
+| 知识/聚合搜索无结果 | 未找到相关结果,换个关键词试试 |
+| 地点无结果 | 未找到相关地点,换个条件试试 |
+| 课程 / 教师 | 未找到相关课程 / 未找到相关教师 |
+| 课程任教关系未录入 | 暂无任课信息,以教务系统课表为准(P03 红线,保持原文) |
+| 管理端列表空 | 暂无知识 / 暂无分类 / 暂无指南 / 暂无活动 / 暂无地点 / 暂无课程 / 暂无教师(可按需补"调整筛选或新增") |
+| 过期工作台空 | 暂无过期/临期信息(保持) |
+| AI 记录空 | 暂无对话记录(保持) |
+| 详情不存在 | 内容不存在或已下架 / 办事指南不存在或已停用 / 活动不存在或已停用(保持) |
+
+### 5.4 提示语气
+
+- 面向学生用"你",面向管理员用"请";错误提示不出现堆栈与英文内部信息(简报 3.5 口径)。
+- 红线文案保持原文,禁止弱化:"暂无任课信息,以教务系统课表为准""系统仅按有效期字段识别过期/临期,处理结果以人工核实为准""导出文件含对话原文,提交前需脱敏,不入 git"。
+
+## 6. 落地文件映射
+
+| 范围 | 文件 |
+|---|---|
+| 全局令牌与主题覆盖 | `frontend/src/styles/index.css`(新增),`main.ts` 引入(置于 element-plus css 之后) |
+| 布局 | `components/layout/StudentLayout.vue`、`components/layout/AdminLayout.vue` |
+| 基础组件 | `PageFooter.vue`、`StatusTag.vue`、`ExpiredBanner.vue`、`KnowledgeCard.vue`、`SearchBar.vue`、`AiFloatEntry.vue` |
+| 学生端 11 页 | `views/student/*.vue`(Home/KnowledgeList/KnowledgeDetail/ServiceList/ServiceDetail/ActivityList/ActivityDetail/Location/CourseTeacher/SearchResult/AiChat) |
+| 管理端 9 页 | `views/admin/*.vue`(Login/KnowledgeManage/CategoryManage/ServiceManage/ActivityManage/LocationManage/CourseTeacherManage/ExpiredWorkbench/AiLog)+ `NotFoundView.vue` |
+
+仅修改 `<style>`、全局 css 与模板静态文案/结构微调(页头、分组菜单、全角括号、空态文案),不改 api/stores/router/tests 与任何字段绑定,不新增依赖。
+
+## 7. 追溯
+
+| 视觉/文案约定 | 支撑需求 | 验证 |
+|---|---|---|
+| 状态四态色 + StatusTag | FR-03、FR-10 | TC-04、TC-09 |
+| 过期横幅警示但不惊吓、"待核实"标签 | FR-10 | TC-09 |
+| 空态文案句式(搜索/筛选/详情) | FR-02、FR-04~06 | TC-01、TC-02、TC-03 |
+| "暂无任课信息,以教务系统课表为准" | FR-05/P03 | P03 红线 |
+| 过期工作台人工核实提示 | FR-10/P05 | P05 红线 |
+| AI 气泡来源卡片化、降级提示条、匿名说明 | FR-13 | 简报 3.5 AI 合规 |
+| 表单校验文案与错误提示样式 | FR-08 | TC-06、TC-08 |
+| 数据库异常统一话术展示 | 简报 3.5 | TC-10 |
