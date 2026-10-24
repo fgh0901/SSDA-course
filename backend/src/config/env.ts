@@ -11,8 +11,12 @@ const envSchema = z.object({
   DB_PASSWORD: z.string().default(''),
   DB_NAME: z.string().default('ssda'),
 
-  JWT_SECRET: z.string().min(16).default('ssda-dev-secret-change-me-please'),
+  // 必填(F1/审计 A-01):缺失或过短时启动即失败,不再提供代码内默认密钥
+  JWT_SECRET: z.string().min(16),
   JWT_EXPIRES_IN: z.string().default('12h'),
+
+  // CORS 白名单(F5/审计 A-02):逗号分隔多个 origin,默认放行本地前端开发地址
+  CORS_ORIGIN: z.string().default('http://localhost:5173'),
 
   // AI 生成(DeepSeek,OpenAI 兼容;未配置 Key 时 ChatService 自动降级)
   DEEPSEEK_API_KEY: z.string().optional(),
@@ -25,4 +29,12 @@ const envSchema = z.object({
   KB_API_TOKEN: z.string().optional()
 });
 
-export const env = envSchema.parse(process.env);
+const parsed = envSchema.safeParse(process.env);
+if (!parsed.success) {
+  // fail fast:环境变量缺失/非法直接拒绝启动,错误信息指明具体字段
+  const detail = parsed.error.issues
+    .map((issue) => `${issue.path.join('.') || '(根)'}: ${issue.message}`)
+    .join('; ');
+  throw new Error(`[env] 环境变量校验失败,服务拒绝启动 → ${detail}`);
+}
+export const env = parsed.data;
