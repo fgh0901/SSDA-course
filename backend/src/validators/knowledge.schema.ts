@@ -1,7 +1,5 @@
 import { z } from 'zod';
-import { flagSchema, keywordSchema, paginationSchema } from './common.schema';
-
-const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
+import { DATE_RE, flagSchema, keywordSchema, paginationSchema, refineRealDate } from './common.schema';
 
 /** 公开知识列表 query(契约 2.3) */
 export const knowledgeQuerySchema = paginationSchema.extend({
@@ -37,8 +35,10 @@ const knowledgeBase = {
   categoryId: z.coerce.number({ error: '分类不能为空' }).int().positive('分类不能为空'),
   content: z.string({ error: '正文不能为空' }).trim().min(1, '正文不能为空').max(20000, '正文最长 20000 字符'),
   source: z.string({ error: '来源不能为空' }).trim().min(1, '来源不能为空').max(200, '来源最长 200 字符'),
-  effectiveFrom: z.string({ error: '有效期起不能为空' }).regex(DATE_RE, '日期格式应为 YYYY-MM-DD(effectiveFrom)'),
-  effectiveUntil: z.string().regex(DATE_RE, '日期格式应为 YYYY-MM-DD(effectiveUntil)').optional(),
+  effectiveFrom: refineRealDate(
+    z.string({ error: '有效期起不能为空' }).regex(DATE_RE, '日期格式应为 YYYY-MM-DD(effectiveFrom)')
+  ),
+  effectiveUntil: refineRealDate(z.string().regex(DATE_RE, '日期格式应为 YYYY-MM-DD(effectiveUntil)')).optional(),
   isVerified: flagSchema.default(0)
 };
 

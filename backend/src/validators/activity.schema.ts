@@ -1,7 +1,5 @@
 import { z } from 'zod';
-import { flagSchema, keywordSchema, paginationSchema } from './common.schema';
-
-const DATETIME_RE = /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/;
+import { DATETIME_RE, flagSchema, keywordSchema, paginationSchema, refineRealDateTime } from './common.schema';
 
 export const activityQuerySchema = paginationSchema.extend({
   keyword: keywordSchema,
@@ -18,12 +16,16 @@ const locationIdField = z.coerce.number({ error: 'locationId 必须为数字' })
 export const activityUpsertSchema = z
   .object({
     title: z.string({ error: '活动标题不能为空' }).trim().min(1, '活动标题不能为空').max(100, '活动标题最长 100 字符'),
-    startTime: z
-      .string({ error: '开始时间不能为空' })
-      .regex(DATETIME_RE, '开始时间(startTime)格式应为 YYYY-MM-DD HH:mm:ss'),
-    endTime: z
-      .string({ error: '结束时间不能为空' })
-      .regex(DATETIME_RE, '结束时间(endTime)格式应为 YYYY-MM-DD HH:mm:ss'),
+    startTime: refineRealDateTime(
+      z
+        .string({ error: '开始时间不能为空' })
+        .regex(DATETIME_RE, '开始时间(startTime)格式应为 YYYY-MM-DD HH:mm:ss')
+    ),
+    endTime: refineRealDateTime(
+      z
+        .string({ error: '结束时间不能为空' })
+        .regex(DATETIME_RE, '结束时间(endTime)格式应为 YYYY-MM-DD HH:mm:ss')
+    ),
     locationId: locationIdField,
     signupMethod: z.string().trim().max(200, '报名方式最长 200 字符').optional(),
     targetAudience: z.string().trim().max(200, '适用对象最长 200 字符').optional(),
