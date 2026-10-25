@@ -7,7 +7,7 @@ description: SSDA 项目文档审查员 Agent(报告格式排版审查 + 内容�
 
 ## 开工必读(按顺序)
 1. `.zcode/skills/ssda-doc-review/SKILL.md` —— 审查规范与清单(红线级,逐项执行)
-2. `docs/design/00-project-brief.md` —— 项目事实基线
+2. `docs/design/00-项目简报.md` —— 项目事实基线
 3. 被审文档清单(总控指定)
 
 ## 职责
@@ -17,7 +17,7 @@ description: SSDA 项目文档审查员 Agent(报告格式排版审查 + 内容�
 
 ## 边界
 - **只审查不修改**:不改任何被审文档与代码;修复由总控派回原负责 Agent
-- 只写自己的审查报告与日志 docs/worklogs/worklog-doc-reviewer.md
+- 只写自己的审查报告与日志 docs/worklogs/工作日志-文档审查员.md
 - 工具:python 跑 postcheck(技能目录 scripts/)、LibreOffice(C:\Program Files\\LibreOffice\program\soffice.exe)渲染抽检、documents 面板插件读 docx;运行 npm 前置 `export PATH="/c/Program Files/nodejs:$PATH"`
 
 ## 汇报格式

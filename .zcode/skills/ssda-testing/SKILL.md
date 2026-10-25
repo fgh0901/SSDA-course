@@ -18,7 +18,7 @@ description: SSDA 项目测试与验收规范(Jest/Supertest + Vitest)。凡是�
 
 ## 2. TC-01~TC-10 ↔ 自动化用例映射表(核心资产)
 
-**正式映射表存放于 `docs/testing/tc-mapping.md`**,由测试 Agent 建立并持续维护;下表为骨架,创建正式表时以简报 3.4 的"操作/预期"原文为准,路径可按实际实现微调,但**每个 TC 必须至少有一条自动化用例或显式注明"人工执行+原因"**。
+**正式映射表存放于 `docs/testing/TC用例映射表.md`**,由测试 Agent 建立并持续维护;下表为骨架,创建正式表时以简报 3.4 的"操作/预期"原文为准,路径可按实际实现微调,但**每个 TC 必须至少有一条自动化用例或显式注明"人工执行+原因"**。
 
 > 现状(2026-10-24):正式表已建立,TC-01~TC-10 之外还登记了 **TC-11~TC-16 项目补充用例**(该文件"二、"节:AI 命中/拒答/降级落库、分类删除 409、任教关系维护、AI 日志导出),阶段回归时一并执行;TC-01~TC-10 全覆盖仍是验收硬性条件。
 
@@ -37,7 +37,7 @@ description: SSDA 项目测试与验收规范(Jest/Supertest + Vitest)。凡是�
 
 映射表维护规则:
 
-- 新增/修改用例后**当天**更新 `docs/testing/tc-mapping.md` 的"建议路径→实际路径、状态"列。
+- 新增/修改用例后**当天**更新 `docs/testing/TC用例映射表.md` 的"建议路径→实际路径、状态"列。
 - 状态取值:待实现 / 已实现 / 已通过 / 失败(附原因链接)。
 - 契约或需求变更导致预期变化时,不得私改简报与映射表的"操作/预期"列,上报总控。
 
@@ -139,7 +139,7 @@ mysql -u root -p < db/seed.sql     # 灌入基线数据
 - 写用例前先看 `ssda-api-contract`(响应包)与对应模块 skill
 - it 名称带 TC 编号,保证映射表可双向检索
 - TC-06/TC-07/TC-08 这类跨登录-校验-权限的用例,按"登录→构造数据→断言→清理"完整链路写
-- 每次回归后同步更新 `docs/testing/tc-mapping.md` 与测试报告
+- 每次回归后同步更新 `docs/testing/TC用例映射表.md` 与测试报告
 
 **Don't**
 
@@ -152,4 +152,4 @@ mysql -u root -p < db/seed.sql     # 灌入基线数据
 
 测试 Agent 按项目规范维护 `docs/worklogs/worklog-testing.md`;发现的缺陷不属于测试 Agent 修复范围时,在映射表"状态"列标记失败并在完成报告中列明,由总控分派。
 
-> v1.1 2026-10-24:§1 补 jest --runInBand 红线与 LLM fetch-mock 测试模式(ai-chat-llm.test.ts 模式);§2 标注 tc-mapping.md 已建立且 TC-11~TC-16 补充用例已登记;description 同步 TC-01~TC-16(总控指令,Phase 3 终版迭代)。
+> v1.1 2026-10-24:§1 补 jest --runInBand 红线与 LLM fetch-mock 测试模式(ai-chat-llm.test.ts 模式);§2 标注 TC用例映射表.md 已建立且 TC-11~TC-16 补充用例已登记;description 同步 TC-01~TC-16(总控指令,Phase 3 终版迭代)。

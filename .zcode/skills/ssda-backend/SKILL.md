@@ -189,7 +189,7 @@ export function requireRole(role: string) {
   - deepseek 模式:`DEEPSEEK_API_KEY` 配置即启用 DeepSeek 生成,无需改代码;
   - fallback 模式:Key 未配置或 LLM 超时/异常 → 本地检索 + 模板化回答并明确提示降级;
   - **拒答红线两种模式一致**:检索不到可信内容(`isReliable=false`)→ 不调 LLM 直接返回"知识库未覆盖该问题,请咨询相关部门核实",`sources=[]`,禁止编造。
-- **DeepSeek 适配器参数(与 02-ai-component-design.md 一致)**:OpenAI 兼容协议 `POST {DEEPSEEK_BASE_URL}/chat/completions`;`temperature: 0.3`、`max_tokens: 600`、`stream: false`;`AbortController` 超时(`LLM_TIMEOUT_MS`,默认 20s),超时按失败处理走降级;`DEEPSEEK_API_KEY` 只放 `.env`。
+- **DeepSeek 适配器参数(与 03-AI组件设计.md 一致)**:OpenAI 兼容协议 `POST {DEEPSEEK_BASE_URL}/chat/completions`;`temperature: 0.3`、`max_tokens: 600`、`stream: false`;`AbortController` 超时(`LLM_TIMEOUT_MS`,默认 20s),超时按失败处理走降级;`DEEPSEEK_API_KEY` 只放 `.env`。
 - **注入防线(已落位)**:system prompt = 固定约束(v1)+ 检索资料块,由 `buildSystemPrompt(sources)` 组装;**用户原文只进 user message,禁止拼进 system prompt**。
 - **检索器 v1.1(旧公式已废)**:2~8 字问句整句保留为 strongTerm(命中 ×2 加权);≥3 字分段切**步长 1 的重叠 2-gram**(保住词边界);打分 =(标题命中 ×3 + 正文命中 ×1,整句 ×2)×(1 + 查询词覆盖率)+ 已核实 ×1 + 在有效期内 ×1;检索不到可信内容时提示"请核实"。检索关键词同样只进 SQL 参数(参数化)。
 - `KnowledgeRetriever` 接口预留 `HttpKbRetriever`,仅改配置切换。
@@ -238,6 +238,6 @@ describe('管理接口权限(TC-07)', () => {
 
 ## 12. 冲突处理
 
-本 skill 与 `docs/design/api-contract.md` 或简报冲突时,以契约/简报为准,并在完成报告中上报总控。契约变更提案一律不经由本 skill 执行。
+本 skill 与 `docs/design/接口契约.md` 或简报冲突时,以契约/简报为准,并在完成报告中上报总控。契约变更提案一律不经由本 skill 执行。
 
 > v1.1 2026-10-24:§2 目录树补 `src/ai/`、`src/scripts/` 真实结构(修正 services/ai 旧表述);§9 更新为 AI 双模式事实(适配器参数/注入防线落位/降级链路/检索 v1.1);§10 补 jest --runInBand 红线与 LLM fetch-mock 测试模式;§11 补小步上库纪律(总控指令,Phase 3 终版迭代)。

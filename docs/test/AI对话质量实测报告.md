@@ -3,7 +3,7 @@
 - 执行时间:2026-10-24
 - 执行人:ssda-tester
 - 被测对象:http://localhost:3000 真实服务(DeepSeek Key 未配置,全链路处于降级模式 —— 与 02 设计文档"Key 暂缺,开发期按降级模式先行"的预设一致)
-- 方法:node fetch 直发 14 个正式用例 + 3 个边界/复核用例;代码核对 backend/src/ai/**、frontend/src/views/student/AiChatView.vue;对照 docs/design/02-ai-component-design.md 逐条承诺
+- 方法:node fetch 直发 14 个正式用例 + 3 个边界/复核用例;代码核对 backend/src/ai/**、frontend/src/views/student/AiChatView.vue;对照 docs/design/03-AI组件设计.md 逐条承诺
 
 ## 一、结论
 
@@ -67,7 +67,7 @@
 | 缺 message | body 仅 sessionId | 400 "message 不能为空" | ✓ |
 | 同 sessionId 连续追问 | "校园卡丢了怎么补办?"→"水卡呢?" | 两问均 200,各自独立检索回答(第二问因无上下文拒答) | ✓ 落库串联正常;"水卡呢?"拒答符合"不做上下文推断"的保守取向 |
 
-## 三、设计承诺逐条核对(02-ai-component-design.md)
+## 三、设计承诺逐条核对(03-AI组件设计.md)
 
 | # | 设计承诺 | 实现证据 | 判定 |
 |---|---|---|---|

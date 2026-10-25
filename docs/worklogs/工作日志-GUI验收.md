@@ -8,7 +8,7 @@
   - 后端 API http://localhost:3000(种子数据;AI 为降级模式,预期)
 - 测试方法:browser-use web-gui-tester 技能,纯 GUI 黑盒(点击/输入/滚动 + 截图视觉验证),不读源码、不改代码
 - 截图目录:D:\SSDA\docs\test\gui-screenshots\
-- 报告产物:D:\SSDA\docs\test\gui-acceptance-report.md
+- 报告产物:D:\SSDA\docs\test\GUI验收报告.md
 
 ## 任务书(节点计划)
 
@@ -35,13 +35,13 @@
 - 低严重度:空关键词无提示、确认弹窗英文 Cancel/OK、1024 宽顶栏搜索溢出、管理端固定列遮挡、分类下拉无重置项。
 - 亮点:P04 闭环(新增→审核→发布→学生端可见→下架→不可见)与 409 分类删除保护全部通过;AI 编号来源跳转、降级提示、未覆盖话术正确;整体视觉统一、文案友好。
 - 数据观察:课程「危机」学期「a's'd」脏数据学生端可见;测试自建数据已全部回落(条目已下架、空分类已删除)。
-- 产物:docs/test/gui-acceptance-report.md;截图证据 docs/test/gui-screenshots/(约 50 张,按提交纪律未随本次提交,本地留存)。
+- 产物:docs/test/GUI验收报告.md;截图证据 docs/test/gui-screenshots/(约 50 张,按提交纪律未随本次提交,本地留存)。
 - 提交:按小步提交纪律以 `docs(test): gui acceptance report` 提交,仅 add 本 worklog 与验收报告两个文件。
 
 ## 复核任务(修复后回归)
 
 - 日期:2026-10-25
-- 角色:GUI 复核员(原验收员上下文已丢失,依据原验收报告 docs/test/gui-acceptance-report.md 与修复提交记录复核)
+- 角色:GUI 复核员(原验收员上下文已丢失,依据原验收报告 docs/test/GUI验收报告.md 与修复提交记录复核)
 - 背景:上一轮验收发现 8 项缺陷(D-MED-1~3、D-LOW-1~5),已全部修复(修复提交 b142b70、e14e664、327082a、c490661),本轮为修复后 GUI 黑盒回归复核;不改任何代码。
 - 被测环境:学生端 http://localhost:5173/、管理端 http://localhost:5173/admin/login(admin/admin123);AI 降级模式(Key 未配置,预期)。环境已就绪,未重启任何服务。
 - 截图目录:docs/test/gui-screenshots/recheck/

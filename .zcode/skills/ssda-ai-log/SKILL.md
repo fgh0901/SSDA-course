@@ -12,7 +12,7 @@ description: SSDA 项目的 AI 使用日志规范(课程硬性要求:每阶段�
 | 轨道 | 内容 | 载体 | 谁写入 |
 |---|---|---|---|
 | 轨道①:系统内 AI 对话 | 学生使用系统时与 AI 助手的真实对话 | 数据库表 `ai_chat_session`、`ai_chat_message`(代码自动落库) | 后端 AI 模块 |
-| 轨道②:开发过程 AI 使用日志 | 我们开发本项目过程中对 AI 工具(含 ZCode 等 Agent)的使用记录 | `docs/ai-logs/dev-usage-log.md` | 每个 Agent 人工追加 |
+| 轨道②:开发过程 AI 使用日志 | 我们开发本项目过程中对 AI 工具(含 ZCode 等 Agent)的使用记录 | `docs/ai-logs/开发过程AI使用日志.md` | 每个 Agent 人工追加 |
 
 两轨独立,**互不替代**:轨道①服务于产品功能与合规审计,轨道②服务于课程要求的阶段提交。
 
@@ -31,7 +31,7 @@ description: SSDA 项目的 AI 使用日志规范(课程硬性要求:每阶段�
 
 ```text
 docs/ai-logs/
-├── dev-usage-log.md     # 主台账:按阶段分节,一行(或一卡)一条使用记录
+├── 开发过程AI使用日志.md     # 主台账:按阶段分节,一行(或一卡)一条使用记录
 ├── prompts/             # 关键提示词存档,文件名 kebab-case 加版本号
 │   └── ai-chat-system-prompt-v1.md
 └── exports/             # npm run export:ai-logs 导出的系统内对话(见第 4 节)
@@ -61,7 +61,7 @@ docs/ai-logs/
 
 每个版本一个文件,禁止原地改写已启用过的提示词;新版本在台账新增一行记录变更原因。
 
-### 3.2 dev-usage-log.md 单条记录模板
+### 3.2 开发过程AI使用日志.md 单条记录模板
 
 ```markdown
 ## 阶段 N:<阶段名>(YYYY-MM-DD ~ YYYY-MM-DD)
@@ -107,14 +107,14 @@ const [messages] = await pool.query(
 
 | 阶段要求 | 证据来源 | 负责人 |
 |---|---|---|
-| 每阶段提交 AI 使用日志 | `docs/ai-logs/dev-usage-log.md` 对应阶段小节 | 各 Agent 追加,总控汇总 |
+| 每阶段提交 AI 使用日志 | `docs/ai-logs/开发过程AI使用日志.md` 对应阶段小节 | 各 Agent 追加,总控汇总 |
 | 系统内 AI 对话数据展示 | `docs/ai-logs/exports/` 导出包(阶段内任一代表性时间段) | 后端 Agent 生成 |
 | AI 合规性说明(可解释/鲁棒/公平/隐私) | 第 5 节合规自查清单逐条勾选结果 | AI 模块开发 Agent |
 | 提示词可追溯 | `docs/ai-logs/prompts/` 版本链 | AI 模块开发 Agent |
 
 ## 5. 合规自查清单(阶段提交前核对)
 
-- [ ] dev-usage-log.md 本阶段记录完整(工具/目的/提示词要点/产出/人工修改五要素齐全)
+- [ ] 开发过程AI使用日志.md 本阶段记录完整(工具/目的/提示词要点/产出/人工修改五要素齐全)
 - [ ] 关键提示词已存档到 `docs/ai-logs/prompts/` 且带版本
 - [ ] AI 回答均附知识来源;无来源时明确"待核实"话术
 - [ ] 降级路径可用且消息标记 `fallback`
@@ -139,9 +139,9 @@ const [messages] = await pool.query(
 
 ## 7. 常见问题(FAQ)
 
-- **问:我调 ZCode 写代码,也要记进 dev-usage-log.md 吗?**
+- **问:我调 ZCode 写代码,也要记进 开发过程AI使用日志.md 吗?**
   答:要。轨道②记录的是"开发过程使用 AI"这一行为,与工具无关;ZCode、ChatGPT、DeepSeek 网页版等都算。
-- **问:学生和 AI 助手的对话要不要写进 dev-usage-log.md?**
+- **问:学生和 AI 助手的对话要不要写进 开发过程AI使用日志.md?**
   答:不逐条记录,它们自动落 `ai_chat_*` 表(轨道①);但如果你为了调通该功能做了提示词实验,这些**开发侧实验**要记台账。
 - **问:一次对话用了两个模型(先 DeepSeek 后降级),怎么记?**
   答:台账一行记主过程,备注注明降级;系统内该消息 `mode=fallback` 自然留痕。

@@ -6,12 +6,12 @@
 
 | 文件 | Agent | 状态 |
 |---|---|---|
-| worklog-orchestrator.md | 总控(统筹、评审、集成) | 进行中 |
-| worklog-skill-engineer.md | 技能工程师(本地 skills 创建与迭代) | 进行中 |
-| worklog-requirements.md | 需求与设计 Agent | 未开工 |
-| worklog-backend.md | 后端 Agent | 未开工 |
-| worklog-frontend.md | 前端 Agent | 未开工 |
-| worklog-tester.md | 测试与审计 Agent | 未开工 |
+| 工作日志-总控.md | 总控(统筹、评审、集成) | 进行中 |
+| 工作日志-技能工程师.md | 技能工程师(本地 skills 创建与迭代) | 进行中 |
+| 工作日志-需求设计.md | 需求与设计 Agent | 未开工 |
+| 工作日志-后端.md | 后端 Agent | 未开工 |
+| 工作日志-前端.md | 前端 Agent | 未开工 |
+| 工作日志-测试审计.md | 测试与审计 Agent | 未开工 |
 
 ## 日志格式约定
 

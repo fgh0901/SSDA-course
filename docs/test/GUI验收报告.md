@@ -5,7 +5,7 @@
 - 方法:browser-use web-gui-tester 技能,纯 GUI 黑盒(模拟真实用户点击/输入/滚动,截图视觉验证 + 只读 DOM 交叉验证);不读源码、不改代码、不修复
 - 被测环境:学生端 http://localhost:5173/、管理端 http://localhost:5173/admin/login(admin/admin123)、后端 http://localhost:3000(AI 降级模式,DeepSeek Key 未配置,属预期)
 - 截图证据:D:\SSDA\docs\test\gui-screenshots\(本报告引用相对路径 gui-screenshots/xxx.png;截图目录按仓库纪律未纳入本次提交,保留在本地作为证据)
-- 工作日志:docs/worklogs/worklog-gui-tester.md
+- 工作日志:docs/worklogs/工作日志-GUI验收.md
 
 ## 环境与数据说明(测试准备记录)
 

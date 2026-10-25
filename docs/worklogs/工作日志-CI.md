@@ -11,13 +11,13 @@
 
 ### 交付物
 1. `.github/workflows/ci.yml`:三 job 结构(课程材料 / frontend / backend),backend job 带 MySQL 8.0 service container 并预置全部后端环境变量
-2. `docs/worklogs/worklog-ci.md`(本文件)
+2. `docs/worklogs/工作日志-CI.md`(本文件)
 
 ### 边界
 - 只改 `.github/workflows/ci.yml` + 本 worklog;不碰 backend/ frontend/ db/ docs/design/
 - 不改 backend 代码(env.ts 由另一 Agent 并行修改,流水线只做环境预置适配)
 - 不 push;不本地跑 npm test(ssda_test 库另一 Agent 在用,避免冲突)
-- 提交仅 `git add .github/ docs/worklogs/worklog-ci.md`,提交信息 `ci: adapt pipeline to vue3+express+mysql project (mysql service, backend env, dedicated jobs)`
+- 提交仅 `git add .github/ docs/worklogs/工作日志-CI.md`,提交信息 `ci: adapt pipeline to vue3+express+mysql project (mysql service, backend env, dedicated jobs)`
 
 ## 节点记录
 
@@ -58,7 +58,7 @@
 
 ### 产出路径
 - .github/workflows/ci.yml(重写)
-- docs/worklogs/worklog-ci.md(本文件)
+- docs/worklogs/工作日志-CI.md(本文件)
 
 ### 静态自检结果
 1. YAML 缩进逐行核对:三 job 层级、steps/services/env 缩进、`options: >-` 折叠块、pwsh 多行 run 均正确。

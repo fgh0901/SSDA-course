@@ -126,7 +126,7 @@ export const useAuthStore = defineStore('auth', () => {
 - 提示:操作结果用 `ElMessage`,确认用 `ElMessageBox.confirm`;空数据用 `el-empty` 并给引导文案(TC-02/TC-03 的"无结果提示")。
 - 状态标签:用 el-tag 展示 `draft/pending_review/published/takedown`,过期知识在详情页顶部展示过期横幅(TC-09)。
 - 统一中文文案;按钮防重复提交(loading 态)。
-- **设计令牌**:颜色(主色/四态色)、间距、圆角、阴影以 `docs/design/04-ui-design-spec.md` 为准,全局样式与令牌变量在 `src/styles/index.css`(main.ts 引入);组件内优先用令牌,不散写同类色值/间距,与既有页面保持观感一致。
+- **设计令牌**:颜色(主色/四态色)、间距、圆角、阴影以 `docs/design/05-UI设计规格.md` 为准,全局样式与令牌变量在 `src/styles/index.css`(main.ts 引入);组件内优先用令牌,不散写同类色值/间距,与既有页面保持观感一致。
 
 ## 7. 路由与守卫
 
@@ -216,7 +216,7 @@ onMounted(fetchList);
 
 **Do**
 
-- 新页面先看路由表与页面清单(简报第 6 节),字段对照 api-contract
+- 新页面先看路由表与页面清单(简报第 6 节),字段对照 接口契约
 - 请求走 `src/api/`,状态走 Pinia,类型放 `src/types/`
 - 空态/无结果/过期状态都要有明确 UI(TC-02、TC-03、TC-09)
 - 表单校验文案与后端 400 message 保持一致口径(TC-08)
@@ -232,4 +232,4 @@ onMounted(fetchList);
 
 完成节点时更新 `docs/worklogs/worklog-<agent>.md`;接口契约有出入时不改契约,记录并在完成报告提请总控。
 
-> v1.1 2026-10-24:§2 目录树补 `styles/`(index.css);§6 补设计令牌引用(docs/design/04-ui-design-spec.md)(总控指令,Phase 3 终版迭代)。
+> v1.1 2026-10-24:§2 目录树补 `styles/`(index.css);§6 补设计令牌引用(docs/design/05-UI设计规格.md)(总控指令,Phase 3 终版迭代)。

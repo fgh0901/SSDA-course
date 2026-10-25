@@ -1,7 +1,7 @@
 # AI 对话系统提示词存档(v1)
 
 - **落档日期**:2026-10-25
-- **来源代码**:`backend/src/ai/chat-service.ts` 的 `buildSystemPrompt()`(与 `docs/design/02-ai-component-design.md` §3.1 v1 一致,若冲突以代码为准并同步设计文档)
+- **来源代码**:`backend/src/ai/chat-service.ts` 的 `buildSystemPrompt()`(与 `docs/design/03-AI组件设计.md` §3.1 v1 一致,若冲突以代码为准并同步设计文档)
 - **注入防线**:system message 仅含固定约束 + 检索资料块(资料非用户输入);用户输入逐字进入 user message,禁止拼入本提示词
 
 ## 提示词全文

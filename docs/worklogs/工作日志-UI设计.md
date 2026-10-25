@@ -1,4 +1,4 @@
-# worklog-ui-designer(前端设计师 Agent)
+# 前端设计师 Agent 工作日志
 
 ## 任务书(2026-10-24)
 
@@ -7,7 +7,7 @@
 **用户要求**:界面符合当代审美、设计规范,文字与内容显示优雅舒适。
 
 **交付物**:
-1. 设计规格 `docs/design/04-ui-design-spec.md`:设计令牌(主色/状态四态色/间距/圆角/字号/阴影)、组件约定(页头/卡片/表格/表单/空态/加载态/面包屑)、中文文案规范。
+1. 设计规格 `docs/design/05-UI设计规格.md`:设计令牌(主色/状态四态色/间距/圆角/字号/阴影)、组件约定(页头/卡片/表格/表单/空态/加载态/面包屑)、中文文案规范。
 2. 全局与逐页落地:
    - 全局:统一样式文件 `frontend/src/styles/index.css`(字体栈、页面背景、卡片圆角阴影、Element Plus 主题变量覆盖),`main.ts` 引入。
    - 布局:StudentLayout 顶部导航精修、AdminLayout 侧边栏分组/选中态、PageFooter 数据来源声明。
@@ -18,12 +18,12 @@
 - 只改 `<style>`、全局 css、模板静态文案与结构微调、Element Plus 主题变量;禁止改 api/stores/router/tests 逻辑、接口调用与契约字段绑定;禁止新增依赖;禁止改 backend。
 - 不删除或弱化既有功能与状态提示(过期横幅/待核实提示必须保留)。
 - 完成前必须全绿:`npm run lint`(先 --fix)、`npm test`(40 用例)、`npm run build`。
-- 不 git 操作;除 03-page-spec.md 外不改其他设计文档(可新建 04)。
+- 不 git 操作;除 04-页面规格.md 外不改其他设计文档(可新建 04)。
 
 ## 节点
 
-- [x] 节点 0(2026-10-24):任务书落地;通读 00-project-brief、03-page-spec、frontend/src 全部 11 学生页 + 9 管理页 + 8 组件 + main.ts/App.vue/index.html/package.json。加载 ssda-frontend、ssda-requirements skill。
-- [x] 节点 1:产出 `docs/design/04-ui-design-spec.md` v1.0(设计原则、令牌、EP 变量覆盖表、组件约定、中文文案规范、落地映射、追溯小节)。
+- [x] 节点 0(2026-10-24):任务书落地;通读 00-项目简报、04-页面规格、frontend/src 全部 11 学生页 + 9 管理页 + 8 组件 + main.ts/App.vue/index.html/package.json。加载 ssda-frontend、ssda-requirements skill。
+- [x] 节点 1:产出 `docs/design/05-UI设计规格.md` v1.0(设计原则、令牌、EP 变量覆盖表、组件约定、中文文案规范、落地映射、追溯小节)。
 - [x] 节点 2:新增 `frontend/src/styles/index.css` 并在 `main.ts` 引入(置于 element-plus 样式后):主色 #2b7fff + color-mix 派生色阶、四态色(success #16a34a / warning #d97706 / info #909399 / danger #dc2626)、圆角 12/8/6、阴影两级、字体栈、页面背景 #f6f8fb、卡片/表格/alert/dialog 全局精修、`.page-head`/`.filter-bar`/`.pager` 通用类。
 - [x] 节点 3:布局与基础组件——StudentLayout(吸顶+阴影+品牌圆点+菜单精修+搜索框 280px)、AdminLayout(菜单按"内容管理/信息维护/质量运维"分组,选中项浅蓝底,无图标依赖)、PageFooter(两行声明)、StatusTag(round)、ExpiredBanner(圆角,文案原文保留)、KnowledgeCard(摘要两行截断+hover 上浮)、SearchBar、AiFloatEntry。
 - [x] 节点 4:学生端 11 页 + NotFoundView 逐页打磨(页头描述、Hero 渐变、详情白卡容器、聚合搜索"共 N 条"、AI 气泡两侧区分/来源卡片化/降级条柔和、空态语义化)。
@@ -40,7 +40,7 @@
 ### 改动清单(文件级)
 
 **新增**
-- `docs/design/04-ui-design-spec.md` — UI 设计规格 v1.0
+- `docs/design/05-UI设计规格.md` — UI 设计规格 v1.0
 - `frontend/src/styles/index.css` — 全局设计令牌 + Element Plus 主题覆盖 + 通用类
 
 **修改(前端,共 25 个文件)**
@@ -51,7 +51,7 @@
 - `frontend/src/views/admin/`:`LoginView`、`KnowledgeManageView`、`CategoryManageView`、`ServiceManageView`、`ActivityManageView`、`LocationManageView`、`CourseTeacherManageView`、`ExpiredWorkbenchView`、`AiLogView`(9 页)
 - `frontend/src/views/NotFoundView.vue`
 
-**未改动**:frontend/src/{api,stores,router,types,utils,__tests__} 全部、backend 全部、docs/design/00~03 与 api-contract.md。
+**未改动**:frontend/src/{api,stores,router,types,utils,__tests__} 全部、backend 全部、docs/design/00~03 与 接口契约.md。
 
 ### 设计决策说明
 
@@ -85,4 +85,4 @@ Test Files  7 passed (7)
 1. `index-*.js` 主包 1.09 MB:建议后续在 `vite.config.ts` 配 `manualChunks` 拆 Element Plus,或改按需引入(unplugin-vue-components)——涉及构建配置,超出本次边界。
 2. 列表首屏可升级 `el-skeleton` 骨架屏替代 `v-loading`,提升感知性能。
 3. 全角化脚本(临时文件)已用完即弃,未入仓库;后续新页面建议直接遵循 04 规格第 5 节文案规范。
-4. ExpiredBanner 日期外侧括号现为半角(测试锁定);若未来由总控修订 03-page-spec 与测试用例,可一并全角化。
+4. ExpiredBanner 日期外侧括号现为半角(测试锁定);若未来由总控修订 04-页面规格 与测试用例,可一并全角化。

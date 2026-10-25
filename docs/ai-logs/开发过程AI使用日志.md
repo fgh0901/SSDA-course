@@ -1,4 +1,4 @@
-# 开发过程 AI 使用日志(dev-usage-log)
+# 开发过程 AI 使用日志
 
 > 依据 ssda-ai-log 技能轨道②:记录开发过程中每个阶段对 AI 工具的使用(工具/目的/提示词要点/产出/人工修改),对应课程「每阶段提交 AI 使用日志」考核项。各 Agent 在自己的 worklog 中记录节点,本文件由总控按阶段汇总。
 
@@ -20,7 +20,7 @@
 | 使用工具 | ZCode(GLM 模型,主会话总控)+ 后台子 Agent(需求与设计,已注册为角色 ssda-requirements) |
 | 使用目的 | 依据需求书 2.0 与项目简报,产出 API 契约 v1.0、系统设计(架构/ER/时序/类图)、AI 组件设计、页面规格 |
 | 提示词要点 | 「契约逐接口给出参数表+成功示例+错误分支;附接口↔FR↔M↔TC 追溯矩阵;发现简报冲突上报不得自行改简报」 |
-| 产出 | docs/design/api-contract.md(775 行)、01-system-design.md(463 行)、02-ai-component-design.md(156 行)、03-page-spec.md(185 行) |
+| 产出 | docs/design/接口契约.md(775 行)、02-系统总体设计.md(463 行)、03-AI组件设计.md(156 行)、04-页面规格.md(185 行) |
 | 人工修改/把关 | 总控评审:FR-01~13 覆盖性核对通过;裁决 7 项待决策(错误码统一 VALIDATION_ERROR;mode=deepseek|fallback 满足课程 AI 工具标注要求;追溯矩阵契约内嵌;批准 TC-11+ 增补与 categories 分页例外);人工修订 3 份 skills 与契约对齐 |
 | 待用户确认 | 契约 v1.0 冻结(Phase 1 门禁) |
 

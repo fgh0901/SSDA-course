@@ -21,7 +21,7 @@ API 契约相关走 `ssda-api-contract`;代码走 `ssda-backend`/`ssda-frontend`
 优先级从高到低:
 
 1. `需求分析说明书2.0.docx`(项目根目录,需求最高依据)
-2. `docs/design/00-project-brief.md`(全体 Agent 的统一事实来源)
+2. `docs/design/00-项目简报.md`(全体 Agent 的统一事实来源)
 3. 其他设计文档
 
 发现文档之间冲突:一律不得自行修改简报或 docx,在完成报告/工作日志中上报总控裁决。
@@ -36,7 +36,7 @@ API 契约相关走 `ssda-api-contract`;代码走 `ssda-backend`/`ssda-frontend`
 | Pxx | 主业务流程 | P01 ~ P05 | 两位数字 |
 | TC-xx | 验收测试用例 | TC-01 ~ TC-10(简报冻结)+ TC-11 ~ TC-16(项目补充,总控裁决登记) | 每条必须能映射回至少一个 FR |
 
-> TC-11~TC-16(AI 命中/拒答/降级落库、分类删除 409、任教关系维护、AI 日志导出)已由总控登记于 `docs/testing/tc-mapping.md` 第二节;引用时同样带编号,**不属于**自创编号违规。
+> TC-11~TC-16(AI 命中/拒答/降级落库、分类删除 409、任教关系维护、AI 日志导出)已由总控登记于 `docs/testing/TC用例映射表.md` 第二节;引用时同样带编号,**不属于**自创编号违规。
 
 当前冻结的 FR 清单(细节以简报 3.1 为准):
 
@@ -73,7 +73,7 @@ API 契约相关走 `ssda-api-contract`;代码走 `ssda-backend`/`ssda-frontend`
 
 ## 4. 追溯矩阵写法(设计 → FR → TC 双向)
 
-矩阵**内嵌在 `docs/design/api-contract.md` 第 5 节**(总控裁决 2026-10-24:契约内嵌为准,保证与接口定义同步更新,不另建独立文件;如未来需要独立需求文档再抽取)。
+矩阵**内嵌在 `docs/design/接口契约.md` 第 5 节**(总控裁决 2026-10-24:契约内嵌为准,保证与接口定义同步更新,不另建独立文件;如未来需要独立需求文档再抽取)。
 
 **正向**(设计文档里写):每个设计产物必须标明覆盖的 FR 与验证它的 TC。
 
@@ -111,8 +111,8 @@ API 契约相关走 `ssda-api-contract`;代码走 `ssda-backend`/`ssda-frontend`
 ```text
 docs/
 ├── design/
-│   ├── 00-project-brief.md      # 已存在,勿改
-│   ├── api-contract.md          # 契约,由总控冻结/修订;追溯矩阵内嵌于第 5 节
+│   ├── 00-项目简报.md      # 已存在,勿改
+│   ├── 接口契约.md          # 契约,由总控冻结/修订;追溯矩阵内嵌于第 5 节
 │   └── NN-<主题>.md             # 其他设计文档:两位序号 + kebab-case
 ├── worklogs/                    # 各 Agent 工作日志(worklog-<agent>.md)
 └── ai-logs/                     # AI 使用日志,见 ssda-ai-log
@@ -148,7 +148,7 @@ docs/
 **Don't**
 
 - 禁止私自新增、删除、重排 FR/US/M/P/TC 编号
-- 禁止修改简报、需求分析说明书 docx、api-contract.md(仅总控有权)
+- 禁止修改简报、需求分析说明书 docx、接口契约.md(仅总控有权)
 - 禁止在验收标准里写无法执行检验的措辞
 - 禁止绕过编号体系自创"需求 1.1.3"式编号
 
@@ -156,4 +156,4 @@ docs/
 
 完成任务过程中,按项目规范维护 `docs/worklogs/worklog-<你的agent名>.md`:开工写任务书,按节点追加,结束写完成报告(已完成/产出路径/遗留问题/需总控决策事项)。
 
-> v1.1 2026-10-24:§3 编号体系表 TC 行补充 TC-11~TC-16 项目补充用例已登记事实(docs/testing/tc-mapping.md),防止被误判为自创编号(总控指令,Phase 3 终版迭代;其余章节未动)。
+> v1.1 2026-10-24:§3 编号体系表 TC 行补充 TC-11~TC-16 项目补充用例已登记事实(docs/testing/TC用例映射表.md),防止被误判为自创编号(总控指令,Phase 3 终版迭代;其余章节未动)。

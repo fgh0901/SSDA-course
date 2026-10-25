@@ -1,6 +1,6 @@
 ---
 name: ssda-api-contract
-description: SSDA 项目的 API 契约与接口约定。凡是设计新接口、修改接口路径/参数/返回结构、定义错误码、前后端联调对齐响应格式,以及任何涉及 /api/ 路径命名的任务,必须先使用本 skill;新增或修改接口前"先登记 api-contract.md 再实现"是强制流程。
+description: SSDA 项目的 API 契约与接口约定。凡是设计新接口、修改接口路径/参数/返回结构、定义错误码、前后端联调对齐响应格式,以及任何涉及 /api/ 路径命名的任务,必须先使用本 skill;新增或修改接口前"先登记 接口契约.md 再实现"是强制流程。
 ---
 
 # ssda-api-contract:API 契约规范
@@ -16,9 +16,9 @@ description: SSDA 项目的 API 契约与接口约定。凡是设计新接口、
 
 ## 2. 唯一契约文件
 
-- 契约文件:`docs/design/api-contract.md`(**当前版本 v1.1**:v1.0 Phase 1 冻结,v1.1 为阶段体检补登记,只增不删)。
-- **子 Agent 没有直接修改契约的权限**(简报第 8 节)。需要新增/变更接口时:在自己的工作日志记录变更提案 → 完成报告中列出 → 由总控裁决并统一修订 api-contract.md → 之后才能实现。
-- 本 skill 与契约冲突时,以 api-contract.md 为准并上报。
+- 契约文件:`docs/design/接口契约.md`(**当前版本 v1.1**:v1.0 Phase 1 冻结,v1.1 为阶段体检补登记,只增不删)。
+- **子 Agent 没有直接修改契约的权限**(简报第 8 节)。需要新增/变更接口时:在自己的工作日志记录变更提案 → 完成报告中列出 → 由总控裁决并统一修订 接口契约.md → 之后才能实现。
+- 本 skill 与契约冲突时,以 接口契约.md 为准并上报。
 
 ## 3. 响应包结构(全项目统一)
 
@@ -74,7 +74,7 @@ description: SSDA 项目的 API 契约与接口约定。凡是设计新接口、
 
 `VALIDATION_ERROR`(400)、`UNAUTHORIZED`(401)、`FORBIDDEN`(403)、`NOT_FOUND`(404)、`CONFLICT`(409)、`INTERNAL_ERROR`(500);业务态可扩展如 `KNOWLEDGE_EXPIRED`。(总控裁决 2026-10-24:统一 VALIDATION_ERROR,废弃 INVALID_PARAM)
 
-## 7. 当前项目接口清单(概要,细节以 api-contract.md 为准;契约冻结至 v1.1)
+## 7. 当前项目接口清单(概要,细节以 接口契约.md 为准;契约冻结至 v1.1)
 
 **公开接口(无需登录)**
 
@@ -98,7 +98,7 @@ description: SSDA 项目的 API 契约与接口约定。凡是设计新接口、
 - `GET /api/admin/knowledge/:id/change-logs` 修改日志
 - `GET /api/admin/ai-logs` AI 对话记录(`?export=1` 导出)
 
-## 8. 契约条目模板(写进 api-contract.md 的格式)
+## 8. 契约条目模板(写进 接口契约.md 的格式)
 
 ```markdown
 ### POST /api/ai/chat
@@ -108,7 +108,7 @@ description: SSDA 项目的 API 契约与接口约定。凡是设计新接口、
 - 错误:400 VALIDATION_ERROR(消息为空/超长);500 INTERNAL_ERROR
 - 关联需求:FR-13;验证用例:见 ssda-testing 映射表
 ```
-(总控裁决 2026-10-24:字段名 answer、mode 取值 deepseek|fallback——mode 记录生成引擎身份,满足课程 AI 日志"标注使用哪个工具"要求;以 api-contract.md 为准)
+(总控裁决 2026-10-24:字段名 answer、mode 取值 deepseek|fallback——mode 记录生成引擎身份,满足课程 AI 日志"标注使用哪个工具"要求;以 接口契约.md 为准)
 
 ## 9. 最小代码示例(与契约一致的 Express 实现)
 
@@ -136,13 +136,13 @@ export async function listKnowledge(req: Request, res: Response, next: NextFunct
 - [ ] 响应拦截器已按 `success` 解包;组件拿到的是 `data`,不是整个 body
 - [ ] 错误分支处理了 401(清 token 跳登录)、403(提示无权限)、400(展示 `error.message`)
 - [ ] 数据库 snake_case 列名已在 DAO 层映射为 camelCase 返回
-- [ ] 新增接口已先登记 `docs/design/api-contract.md`(登记流程见第 2 节)
+- [ ] 新增接口已先登记 `docs/design/接口契约.md`(登记流程见第 2 节)
 
 ## 11. Do / Don't
 
 **Do**
 
-- 实现前先对照 api-contract.md;契约未定义的接口一律先走登记流程
+- 实现前先对照 接口契约.md;契约未定义的接口一律先走登记流程
 - 路径用复数名词、多词段 kebab-case、字段 camelCase、分页 page/pageSize/total
 - 400 的 message 写明具体字段(如"effective_until 不是合法日期")
 - 每个 401/403/404 场景对齐第 6 节语义
