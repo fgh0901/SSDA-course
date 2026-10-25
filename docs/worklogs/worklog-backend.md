@@ -126,3 +126,16 @@
   - ssda_test 无该脏数据(查询为空),全量 `npm test`(globalSetup 重建 ssda_test)通过即验证不受影响。
 - **验收**:`npm run lint` ✅、`npm test` **17 套件 134 用例**(129+5)全绿 ✅、`npm run build` ✅;3000 端口运行服务实测(tsx watch 已热载新校验):`GET /api/courses?keyword=危机` → total=0;管理端 POST 非法日期 2026-13-99 / 2026-02-30 → 400「日期不合法:… 不是真实存在的日期」;合法 2026-02-28 → 200 创建成功(验证用条目已当场删除,knowledge 与 change_log 无残留)。
 - **提交**:F1 一笔 `fix(backend): ...`;F2 一笔 `chore(db): ...`(seed.sql 无需改动,本笔仅含本 worklog 的任务 4 记录);只 add backend/ 与本 worklog,未 push。
+
+## 任务 5:课程文档起草(总控指令)
+
+- [2026-10-25] 任务书(执行人:ssda-backend-dev;D 角色关键产出两份,正式书面语,与仓库事实逐字一致):
+  1. `docs/report/部署文档.md`:环境要求(Node 22+/npm/MySQL 8.0,本机实测 node v24.19.0 / MySQL 8.0.44)、数据库初始化(schema+seed,seed 含 admin 账号与演示数据、覆盖重建)、backend/.env 全部变量说明表(含 JWT_SECRET ≥16 必填、禁止提交 .env)、启动与验证(3000/5173 代理,三步验证)、AI 组件配置(未配 Key 降级、配 DEEPSEEK_API_KEY 切换、KB_API_BASE_URL 按实际「预留未实装」如实说明)、CI/CD(ci.yml 三 job 概述)、常见问题(Windows PATH/curl GBK/esbuild 提示/端口占用)、安全清单。
+  2. `docs/report/监控方案.md`:基于**已实现**机制写,不过度承诺——目标与口径(普通查询 2 秒内 NFR、AI 降级率、错误不泄堆栈)、已实现监控点(/api/health、morgan dev、统一错误日志、ai_chat_message.latency_ms+mode 与 export:ai-logs 降级率)、演示前巡检清单、演进项(标注「未实现,规划」)。
+- 素材:README.md、backend/.env.example、.github/workflows/ci.yml,及源码事实核对(app.ts health、error.ts、chat-service.ts、export-ai-logs.ts、env.ts、vite.config.ts、.gitignore)。
+- 边界:只写 docs/report/ 下 2 文件与本 worklog;完成后提交 `docs(report): deployment guide and monitoring plan`(只 add 两文档+worklog)。
+
+### 任务 5 执行记录(2026-10-25)
+
+- 事实核对补充:GET /api/health 响应包为 `{success:true,data:{status:"ok",db:"up"|"down",time}}`;morgan('dev') 仅 NODE_ENV≠test 启用;统一错误中间件未知错误仅 console.error('[unhandled]') 并返回 500「系统繁忙」,现有日志路径(morgan dev 请求行/错误对象)均不含请求头与请求体,密码/token/API Key 不落日志;createRetriever 对 KB_API_BASE_URL 仅预留(HttpKbRetriever 未实装,配置后仍用 LocalKbRetriever);管理端 GET /api/admin/ai-logs 列表含 mode/retriever/latencyMs(契约 3.19);.gitignore 已含 `.env`/`.env.*`(豁免 .env.example)与 `docs/ai-logs/exports/`。
+- 产出:`docs/report/部署文档.md`、`docs/report/监控方案.md` 两份(内容与上述源码事实逐字对齐);本笔提交仅含 2 文档+本 worklog。
