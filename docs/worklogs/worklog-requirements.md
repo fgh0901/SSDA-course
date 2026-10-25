@@ -226,3 +226,46 @@
 ### 需总控决策事项
 
 无(仅建议:Word 生成时按"附:本稿与仓库文档对应关系"表核对各章素材版本)。
+
+---
+
+## 任务 4:Word 生成(总控指令)
+
+- **日期**:2026-10-25
+
+### 目标
+
+依据《系统设计报告-内容稿.md》(8 章,730 行)生成正式 Word 交付物《系统设计报告.docx》(仓库根,与需求分析说明书2.0.docx 并列):验证封面配方、目录域、三段式页码、三图十表、等宽代码段,postcheck 全绿;不修改内容稿/图片/代码,不 push。
+
+### 允许改动的文件(仅限以下 2 个)
+
+1. `系统设计报告.docx`(新建,仓库根)
+2. `docs/worklogs/worklog-requirements.md`(本文件)
+
+### 完成报告(任务 4:Word 生成,2026-10-25)
+
+#### 已完成
+
+1. `系统设计报告.docx`(约 1.54 MB,共 30 页 = 封面 1 + 目录 3 + 正文 26),docx 技能 Create 路由 + docx-js 9.14 生成:
+   - **封面**:`selectCoverRecipe("academic")` → R5 Clean White + ACADEMIC 配方(与需求分析说明书2.0 的纯白学术封面风格一致,禁止自由封面代码):标题「新生校园知识库与入学事务辅助系统」按语义断行两行、副题「系统设计报告」、元信息表(课程名称:《软件系统设计与应用》课程设计 / 学年学期:2026—2027 学年度第 1 学期 / 完成日期:2026-10-25,下划线等长单行);
+   - **目录**:「目 录」标题(非 Heading 防自索引)+ TableOfContents 域(hyperlink,1-3 级)+ 斜体灰字刷新提示;`add_toc_placeholders.py --auto` 注入 42 条占位条目(exit 0),updateFields=true、Heading1~3 补 outlineLvl;
+   - **三段式页码**:封面无页码(无页眉页脚、移除空 `<w:pgNumType/>`)/ 目录罗马数字(页脚域后处理为 `PAGE \* ROMAN \* MERGEFORMAT`)/ 正文阿拉伯数字从 1(`PAGE \* arabic \* MERGEFORMAT`,禁用 `\* decimal`);LibreOffice 渲染抽检目录页 I/III、正文页 1/2/25 正确;
+   - **正文**:8 章 + 附录(章节↔仓库文档对应表)共 9 个 H1 + 33 个 H2(HeadingLevel);宋体小四、1.3 倍行距(line:312)、两端对齐、首行缩进 2 字符;10 张三线表(全表 margins、行 cantSplit、表头 tableHeader、前导段 keepNext);2 处等宽代码段(Courier New 9pt、浅底,统一响应包 JSON 与 db 初始化命令);中文弯引号全部以 `\u201c\u201d` 转义;行内代码/加粗由内容稿标记忠实转写,未增删事实、数字、表名;
+   - **插图**:图 2-1/3-1/5-1 以 ImageRun(type:"png")嵌入并按 PNG 头实际尺寸等比缩放——arch.png 4965×570→580×67px、er.png 7853×2536→580×187px(宽 15.3cm 适配 A4 正文区)、ai.png 1186×3620→248×756px(竖长图限高 20cm 居中);图题置于图下居中,图片段落 keepNext 与图题同页。
+2. **postcheck.py:9/9 全绿(0 错误 0 警告)**:blank-pages / cover-overflow / line-spacing / image-overflow / font-fallback / heading-levels / shading-type / toc / image-aspect-ratio 全部通过(修复前:首次生成即全绿,仅封面元信息表列宽折行一处视觉缺陷,修正 calcR5MetaLayout 宽度基准后复检通过);
+3. **LibreOffice 渲染验证**:30 页无空白页,封面/目录/正文/附录结构正确。
+
+#### 偏差说明(与派单字面要求的差异)
+
+1. 目录节末尾未加显式 PageBreak:docx-js 将节属性 sectPr 合并进节内最后一个段落,"节尾 PageBreak + 下一节 NEXT_PAGE"触发 postcheck 硬错误(双分页空白页);改为由正文节 NEXT_PAGE 节分页保证目录与正文分页(功能等效,postcheck 与 SKILL 空白页规则均通过);
+2. 目录页码渲染为罗马大写 I/II/III:遵循 toc.md 规定的域开关 `PAGE \* ROMAN \* MERGEFORMAT`,派单中「i,ii」按"罗马数字页码"理解;
+3. 三图实际像素以 PNG 头解析为准(arch 4965×570、er 7853×2536、ai 1186×3620,与派单标注略有出入),嵌入尺寸按实际尺寸等比计算。
+
+#### 遗留问题
+
+1. 目录页码为占位值,打开 Word 后请右键目录选择「更新域」刷新真实页码(目录页已附斜体提示);
+2. 生成脚本留存于 `.docx-toolkit/gen-sysdesign/`(generate.js + postfix.py),属工具目录未入库提交。
+
+#### 需总控决策事项
+
+无。
