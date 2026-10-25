@@ -4,17 +4,21 @@
 
 ## 项目文档
 
-- `《软件系统设计与应用S》课程设计实施 - p.pdf`：课程设计要求。
-- `需求分析说明书2.0.docx`：当前需求分析版本。
-- `需求分析说明书.docx`：前期版本，保留用于记录需求修订过程。
+- `《软件系统设计与应用S》课程设计实施 - p.pdf`:课程设计要求。
+- `需求分析说明书2.0.docx`:当前需求分析版本。
+- `需求分析说明书.docx`:前期版本,保留用于记录需求修订过程。
+- `系统设计报告.docx` / `系统设计报告.pdf`:系统设计报告(架构/数据库/接口/AI 组件/前端/安全/部署设计)。
+- `docs/report/`:课程文档汇总(测试报告、模型评估报告、项目计划、迭代计划与改进记录、部署文档、监控方案、周报),`docs/report/docx/` 为对应 Word 版,`docs/report/images/` 为设计图源图。
+- `docs/design/`:设计过程文档(项目简报、API 契约、系统设计、AI 组件设计、页面规格、UI 设计规格)。
+- `docs/test/`、`docs/audits/`、`docs/testing/`:测试与审计过程材料;`docs/worklogs/`:各 Agent 工作日志;`docs/ai-logs/`:AI 使用日志(课程考核要求)。
 
 ## 分支与提交
 
-`main` 用于保存已集成的项目版本。功能开发在独立分支进行，完成后通过 Pull Request 合并。提交说明简要描述本次变更。
+`main` 用于保存已集成的项目版本。功能开发在独立分支进行,完成后通过本地合并进入 `main`;采用小步提交纪律(Conventional Commits,提交说明可用中文简述变更)。
 
 ## 持续集成
 
-GitHub Actions 工作流位于 `.github/workflows/ci.yml`，在推送到 `main`、针对 `main` 创建 Pull Request 或手动触发时运行。当前工作流检查课程要求和当前版需求分析文档；添加前后端工程配置后，会运行相应的构建和测试步骤。
+GitHub Actions 工作流位于 `.github/workflows/ci.yml`,在推送到 `main`、针对 `main` 创建 Pull Request 或手动触发时运行,包含三个作业:课程材料检查、前端检查(lint/test/build + 产物上传)、后端检查(内置 MySQL 8.0 服务容器,运行 lint/test/build)。
 
 ## 快速启动
 
