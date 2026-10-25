@@ -48,3 +48,7 @@ docs/ai-logs/exports/
 *.tmp
 *.temp
 *.log
+
+# Local docx toolchain (build scratch)
+.docx-toolkit/
+.toolchain-dist/
