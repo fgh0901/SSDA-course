@@ -74,3 +74,12 @@
 1. GET /api/locations/:id 补契约登记或下线;admin 四资源详情 GET 补登记。
 2. docs/testing/tc-mapping.md 尚未建立(目录不存在),TC 映射正式登记需建文件(本任务按"只产出 4 份报告"约束未创建,建议下任务补)。
 3. P1(A-01)与 P2(A-02~A-05)修复分派;修复后复审 + 重跑全量回归与 AI 用例集。
+
+## 任务 3:课程文档起草(总控指令)
+
+- [2026-10-25] 任务书:起草课程文档两份 —— docs/report/测试报告.md(汇总版,7 节)与 docs/report/模型评估报告.md(AI 组件评估,B 角色关键产出,5 节);只写 docs/report/ 下 2 文件与本 worklog;完成后提交 `docs(report): consolidated test report and ai model evaluation`。
+- 节点:
+  - [x] 节点 10:溯源材料汇总 —— 重读 functional-test-report / ai-chat-quality-report / code-audit-report / gui-acceptance-report / tc-mapping 及 backend、gui-tester 等 worklog;实测复跑 backend npm test(17 套件 134 用例全过,约 19.8s)与 frontend vitest(9 文件 54 用例全过,约 35.6s),确认报告计数与当前代码一致。
+  - [x] 节点 11:AI 线上复测三问句(命中 sources=5 / 8 字短问句 sources=5(已修复,不再误拒答)/ 拒答 sources=0),端到端耗时 10~74ms,mode=fallback、retriever=local_kb 如实标注。
+  - [x] 节点 12:撰写两份报告并提交。
+- 数字口径备注:ai-chat.test.ts 实为 18 条用例(总控任务书所写"16"为检索修复回归加入前的计数),ai-chat-llm.test.ts 9 条;逐文件 it() 计数与 jest 总数 134 逐项吻合,报告按实测数登记。
