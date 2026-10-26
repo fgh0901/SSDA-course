@@ -26,7 +26,8 @@ const envSchema = z.object({
 
   // 外部知识库(可选;未配置时使用本地 Mock 检索器)
   KB_API_BASE_URL: z.string().optional(),
-  KB_API_TOKEN: z.string().optional()
+  KB_API_TOKEN: z.string().optional(),
+  KB_TIMEOUT_MS: z.coerce.number().default(5000)
 });
 
 const parsed = envSchema.safeParse(process.env);
