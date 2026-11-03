@@ -57,12 +57,7 @@ const expired = computed(() => isExpiredOn(props.item.effectiveUntil));
 </template>
 
 <style scoped>
-.knowledge-card {
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
-}
-.knowledge-card:hover {
-  transform: translateY(-2px);
-}
+/* 过渡与 hover 上浮由全局 .el-card 统一接管(第二轮精修) */
 .knowledge-card :deep(.el-card__body) {
   padding: 20px;
 }

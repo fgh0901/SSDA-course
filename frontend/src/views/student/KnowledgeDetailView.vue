@@ -126,7 +126,10 @@ onMounted(fetchDetail);
 .detail__content {
   white-space: pre-wrap;
   font-size: 15px;
-  line-height: 1.8;
+  line-height: 1.9; /* 长正文阅读行距 */
+  letter-spacing: 0.2px;
+  text-align: justify;
+  overflow-wrap: anywhere;
   color: var(--el-text-color-regular);
 }
 .detail__back {

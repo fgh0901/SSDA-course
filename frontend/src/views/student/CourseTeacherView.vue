@@ -131,6 +131,7 @@ onMounted(fetchCourses);
         <el-table
           v-loading="loading"
           :data="courseList"
+          stripe
           highlight-current-row
           @row-click="openCourse"
         >
@@ -173,6 +174,7 @@ onMounted(fetchCourses);
           v-model:current-page="coursePage"
           :total="courseTotal"
           layout="total, prev, pager, next"
+          background
           class="pager"
           @current-change="fetchCourses"
         />
@@ -201,6 +203,7 @@ onMounted(fetchCourses);
         <el-table
           v-loading="loading"
           :data="teacherList"
+          stripe
           highlight-current-row
           @row-click="openTeacher"
         >
@@ -255,6 +258,7 @@ onMounted(fetchCourses);
           v-model:current-page="teacherPage"
           :total="teacherTotal"
           layout="total, prev, pager, next"
+          background
           class="pager"
           @current-change="fetchTeachers"
         />

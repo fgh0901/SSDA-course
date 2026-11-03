@@ -104,6 +104,7 @@ onMounted(async () => {
     <el-table
       v-loading="loading"
       :data="list"
+      stripe
     >
       <el-table-column
         label="标题"
@@ -153,6 +154,7 @@ onMounted(async () => {
       v-model:page-size="pageSize"
       :total="total"
       layout="total, prev, pager, next"
+      background
       class="pager"
       @current-change="fetchList"
     />

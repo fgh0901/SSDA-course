@@ -145,21 +145,27 @@ onMounted(async () => {
       class="filter-bar__tip"
     />
 
-    <div
-      v-loading="loading"
-      class="knowledge-list"
+    <el-skeleton
+      :loading="loading"
+      :rows="4"
+      animated
+      class="knowledge-list-skeleton"
     >
-      <KnowledgeCard
-        v-for="item in list"
-        :key="item.id"
-        :item="item"
-      />
-      <el-empty
-        v-if="!loading && list.length === 0"
-        description="未找到相关结果,换个关键词试试"
-        data-testid="knowledge-empty"
-      />
-    </div>
+      <template #default>
+        <div class="knowledge-list">
+          <KnowledgeCard
+            v-for="item in list"
+            :key="item.id"
+            :item="item"
+          />
+          <el-empty
+            v-if="!loading && list.length === 0"
+            description="未找到相关结果,换个关键词试试"
+            data-testid="knowledge-empty"
+          />
+        </div>
+      </template>
+    </el-skeleton>
 
     <el-pagination
       v-model:current-page="page"
@@ -167,6 +173,7 @@ onMounted(async () => {
       :total="total"
       :page-sizes="[10, 20, 50]"
       layout="total, sizes, prev, pager, next"
+      background
       class="pager"
       @current-change="onPageChange"
       @size-change="onPageChange"
@@ -188,5 +195,8 @@ onMounted(async () => {
   display: grid;
   gap: 16px;
   min-height: 120px;
+}
+.knowledge-list-skeleton {
+  min-height: 180px;
 }
 </style>

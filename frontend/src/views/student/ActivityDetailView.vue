@@ -94,6 +94,9 @@ onMounted(fetchDetail);
 .detail__desc :deep(.el-descriptions__label) {
   width: 96px;
 }
+.detail__desc :deep(.el-descriptions__cell) {
+  line-height: 1.8;
+}
 .detail__back {
   margin-top: 24px;
 }

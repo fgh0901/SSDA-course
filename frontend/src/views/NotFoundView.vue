@@ -7,7 +7,7 @@
     <el-result
       icon="warning"
       title="页面不存在"
-      sub-title="您访问的地址不存在或已被移动"
+      sub-title="你访问的地址不存在或已被移动"
     >
       <template #extra>
         <el-button

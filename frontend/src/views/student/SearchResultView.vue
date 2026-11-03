@@ -195,10 +195,6 @@ onMounted(() => {
 }
 .group__item {
   margin-bottom: 12px;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
-}
-.group__item:hover {
-  transform: translateY(-2px);
 }
 .group__item :deep(.el-card__body) {
   padding: 16px 20px;

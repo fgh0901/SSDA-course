@@ -86,20 +86,26 @@ function goCategory(categoryId: number): void {
           查看全部 →
         </router-link>
       </div>
-      <div
-        v-loading="loading"
-        class="home__latest"
+      <el-skeleton
+        :loading="loading"
+        :rows="4"
+        animated
+        class="home__latest-skeleton"
       >
-        <KnowledgeCard
-          v-for="item in latest"
-          :key="item.id"
-          :item="item"
-        />
-        <el-empty
-          v-if="!loading && latest.length === 0"
-          description="暂无已发布知识"
-        />
-      </div>
+        <template #default>
+          <div class="home__latest">
+            <KnowledgeCard
+              v-for="item in latest"
+              :key="item.id"
+              :item="item"
+            />
+            <el-empty
+              v-if="!loading && latest.length === 0"
+              description="暂无已发布知识"
+            />
+          </div>
+        </template>
+      </el-skeleton>
     </section>
   </div>
 </template>
@@ -107,21 +113,24 @@ function goCategory(categoryId: number): void {
 <style scoped>
 .home__hero {
   text-align: center;
-  padding: 48px 24px 32px;
+  padding: 56px 24px 40px;
   margin-bottom: 8px;
-  background: linear-gradient(180deg, rgba(43, 127, 255, 0.06), rgba(43, 127, 255, 0));
+  background:
+    radial-gradient(480px 160px at 18% 0%, rgba(34, 193, 220, 0.09), transparent 70%),
+    linear-gradient(180deg, rgba(43, 127, 255, 0.07), rgba(43, 127, 255, 0));
   border-radius: var(--ssda-radius-card);
 }
 .home__title {
   font-size: 28px;
   letter-spacing: 0.5px;
-  margin: 0 0 8px;
+  margin: 0 0 10px;
   color: var(--el-text-color-primary);
 }
 .home__subtitle {
   color: #909399;
   font-size: 14px;
-  margin: 0 0 24px;
+  margin: 0 0 28px;
+  letter-spacing: 0.3px;
 }
 .home__search {
   max-width: 640px;
@@ -142,10 +151,6 @@ function goCategory(categoryId: number): void {
 .home__category-card {
   cursor: pointer;
   margin-bottom: 16px;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
-}
-.home__category-card:hover {
-  transform: translateY(-2px);
 }
 .home__category-name {
   display: flex;
@@ -171,5 +176,8 @@ function goCategory(categoryId: number): void {
 .home__latest {
   display: grid;
   gap: 16px;
+}
+.home__latest-skeleton {
+  min-height: 180px;
 }
 </style>

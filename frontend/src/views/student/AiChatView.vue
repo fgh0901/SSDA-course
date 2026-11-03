@@ -272,7 +272,7 @@ onMounted(() => {
   border-top-left-radius: 4px;
   padding: 12px 16px;
   font-size: 14px;
-  line-height: 1.7;
+  line-height: 1.75;
   box-shadow: var(--ssda-shadow-1);
 }
 .ai-chat__row--user .ai-chat__bubble {
@@ -292,6 +292,7 @@ onMounted(() => {
 }
 .ai-chat__content {
   white-space: pre-wrap;
+  overflow-wrap: anywhere; /* 长回答中的链接/编号串不撑破气泡 */
 }
 .ai-chat__sources {
   margin-top: 10px;
@@ -305,13 +306,15 @@ onMounted(() => {
 }
 .ai-chat__source-item {
   display: inline-block;
+  max-width: 100%;
   margin: 0 8px 6px 0;
   padding: 3px 10px;
   background: var(--el-color-primary-light-9);
   border-radius: 6px;
   color: var(--el-color-primary);
   text-decoration: none;
-  transition: background 0.2s ease;
+  overflow-wrap: anywhere;
+  transition: background var(--ssda-transition);
 }
 .ai-chat__source-item:hover {
   background: var(--el-color-primary-light-8);
