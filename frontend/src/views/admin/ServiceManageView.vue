@@ -158,13 +158,12 @@ onMounted(async () => {
           @clear="onSearch"
         />
         <el-button
-          type="primary"
           @click="onSearch"
         >
           搜索
         </el-button>
         <el-button
-          type="success"
+          type="primary"
           @click="openCreate"
         >
           新增指南
@@ -175,20 +174,24 @@ onMounted(async () => {
     <el-table
       v-loading="loading"
       :data="list"
+      stripe
     >
       <el-table-column
         prop="title"
         label="标题"
         min-width="180"
+        show-overflow-tooltip
       />
       <el-table-column
         prop="department"
         label="办理部门"
         min-width="140"
+        show-overflow-tooltip
       />
       <el-table-column
         label="办理地点"
         min-width="160"
+        show-overflow-tooltip
       >
         <template #default="{ row }">
           {{ row.location ? `${row.location.building || ''}${row.location.room || ''}(${row.location.name})` : '—' }}
@@ -238,6 +241,7 @@ onMounted(async () => {
       v-model:current-page="page"
       :total="total"
       layout="total, prev, pager, next"
+      background
       class="pager"
       @current-change="fetchList"
     />
@@ -245,7 +249,7 @@ onMounted(async () => {
     <el-dialog
       v-model="dialogVisible"
       :title="editingId === null ? '新增办事指南' : '编辑办事指南'"
-      width="620px"
+      width="640px"
     >
       <el-form
         ref="formRef"
@@ -260,6 +264,7 @@ onMounted(async () => {
           <el-input
             v-model="form.title"
             maxlength="100"
+            placeholder="如:校园卡补办"
           />
         </el-form-item>
         <el-form-item
@@ -269,6 +274,7 @@ onMounted(async () => {
           <el-input
             v-model="form.department"
             maxlength="100"
+            placeholder="如:信息化与网络管理处"
           />
         </el-form-item>
         <el-form-item label="办理地点">

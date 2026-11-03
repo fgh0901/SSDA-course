@@ -314,13 +314,12 @@ onMounted(async () => {
               @clear="onCourseSearch"
             />
             <el-button
-              type="primary"
               @click="onCourseSearch"
             >
               搜索
             </el-button>
             <el-button
-              type="success"
+              type="primary"
               @click="openCourseCreate"
             >
               新增课程
@@ -330,11 +329,13 @@ onMounted(async () => {
         <el-table
           v-loading="loading"
           :data="courseList"
+          stripe
         >
           <el-table-column
             prop="name"
             label="课程名称"
             min-width="180"
+            show-overflow-tooltip
           />
           <el-table-column
             prop="code"
@@ -353,6 +354,7 @@ onMounted(async () => {
           <el-table-column
             label="任课教师"
             min-width="150"
+            show-overflow-tooltip
           >
             <template #default="{ row }">
               <span v-if="row.teachers.length > 0">{{ row.teachers.map((t: { name: string }) => t.name).join('、') }}</span>
@@ -395,6 +397,7 @@ onMounted(async () => {
           v-model:current-page="coursePage"
           :total="courseTotal"
           layout="total, prev, pager, next"
+          background
           class="pager"
           @current-change="fetchCourses"
         />
@@ -415,13 +418,12 @@ onMounted(async () => {
               @clear="onTeacherSearch"
             />
             <el-button
-              type="primary"
               @click="onTeacherSearch"
             >
               搜索
             </el-button>
             <el-button
-              type="success"
+              type="primary"
               @click="openTeacherCreate"
             >
               新增教师
@@ -431,6 +433,7 @@ onMounted(async () => {
         <el-table
           v-loading="loading"
           :data="teacherList"
+          stripe
         >
           <el-table-column
             prop="name"
@@ -466,6 +469,7 @@ onMounted(async () => {
           <el-table-column
             label="任教课程"
             min-width="180"
+            show-overflow-tooltip
           >
             <template #default="{ row }">
               <span v-if="row.courses.length > 0">{{ row.courses.map((c: { name: string }) => c.name).join('、') }}</span>
@@ -501,6 +505,7 @@ onMounted(async () => {
           v-model:current-page="teacherPage"
           :total="teacherTotal"
           layout="total, prev, pager, next"
+          background
           class="pager"
           @current-change="fetchTeachers"
         />

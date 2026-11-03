@@ -129,9 +129,13 @@ async function onLogout(): Promise<void> {
   height: 44px;
   margin: 2px 0;
   border-radius: 8px;
+  transition: background-color var(--ssda-transition), color var(--ssda-transition);
+}
+.admin-layout__menu :deep(.el-menu-item:hover) {
+  background: var(--el-color-primary-light-9);
 }
 .admin-layout__menu :deep(.el-menu-item.is-active) {
-  background: var(--el-color-primary-light-9);
+  background: var(--el-color-primary-light-8);
   font-weight: 600;
 }
 .admin-layout__header {

@@ -62,6 +62,9 @@
   --el-border-radius-small: 6px;
   --el-border-radius-round: 999px;
 
+  /* ---- 动效:统一时长与缓动(第二轮精修,规格 2.7) ---- */
+  --ssda-transition: 0.2s ease;
+
   /* ---- 阴影两级 ---- */
   --ssda-shadow-1: 0 1px 2px rgba(15, 23, 42, 0.04), 0 2px 6px rgba(15, 23, 42, 0.05);
   --ssda-shadow-2: 0 8px 24px rgba(15, 23, 42, 0.1), 0 2px 8px rgba(15, 23, 42, 0.06);
@@ -157,25 +160,54 @@ a:hover {
 
 /* ---- Element Plus 组件精修 ---- */
 
-/* 卡片:12px 圆角 + 一级阴影,hover 升二级 */
+/* 卡片:12px 圆角 + 一级阴影;统一过渡,hover 上浮 2px 并升二级阴影(各页不再重复声明) */
 .el-card {
   border-radius: var(--ssda-radius-card);
   border-color: var(--ssda-border-color);
   box-shadow: var(--ssda-shadow-1);
+  transition: transform var(--ssda-transition), box-shadow var(--ssda-transition),
+    border-color var(--ssda-transition);
 }
 .el-card.is-hover-shadow:hover,
 .el-card[shadow='hover']:hover {
+  transform: translateY(-2px);
   box-shadow: var(--ssda-shadow-2);
+  border-color: var(--el-color-primary-light-7);
 }
 
-/* 表格:表头浅灰加粗、行 hover 浅蓝 */
+/* 按钮:统一过渡;主按钮 hover 柔光投影、active 轻压(链式/圆形按钮除外) */
+.el-button {
+  transition: background-color var(--ssda-transition), border-color var(--ssda-transition),
+    color var(--ssda-transition), box-shadow var(--ssda-transition), transform var(--ssda-transition);
+}
+.el-button--primary:not(.is-link):not(.is-circle):not(.is-disabled):hover {
+  box-shadow: 0 4px 12px rgba(43, 127, 255, 0.28);
+}
+.el-button--primary:not(.is-link):not(.is-circle):not(.is-disabled):active {
+  transform: translateY(1px);
+  box-shadow: none;
+}
+
+/* 表格:表头浅灰加粗、行 hover 浅蓝、斑马纹极浅蓝灰、容器圆角裁切 */
 .el-table {
   --el-table-header-bg-color: #f8fafc;
   --el-table-header-text-color: #475569;
   --el-table-row-hover-bg-color: #f5f8ff;
+  --el-fill-color-lighter: #fafbfd; /* stripe 斑马纹行底色 */
+  border-radius: var(--el-border-radius-base);
+  overflow: hidden;
 }
 .el-table th.el-table__cell {
   font-weight: 600;
+}
+/* 操作列按钮行内紧凑,避免换行错位 */
+.el-table .el-table__cell .el-button + .el-button {
+  margin-left: 12px;
+}
+
+/* 分页:右对齐由 .pager 控制;页码 hover 一致主色 */
+.el-pagination {
+  --el-pagination-hover-color: var(--el-color-primary);
 }
 
 /* 提示条(alert)圆角与留白 */
@@ -183,12 +215,31 @@ a:hover {
   border-radius: var(--el-border-radius-base);
 }
 
-/* 对话框 / 抽屉 / 消息框圆角 */
+/* 对话框 / 抽屉 / 消息框圆角;标题加重,页脚上缘细分隔线 */
 .el-dialog {
   border-radius: var(--ssda-radius-card);
 }
+.el-dialog__title {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--el-text-color-primary);
+}
+.el-dialog__footer {
+  margin-top: 8px;
+  border-top: 1px solid var(--ssda-border-color);
+}
 .el-message-box {
   border-radius: var(--ssda-radius-card);
+}
+
+/* 表单:label 与正文同色,层级由字重区分 */
+.el-form-item__label {
+  color: var(--el-text-color-regular);
+}
+
+/* 骨架屏:圆角与令牌小件一致,动画柔和 */
+.el-skeleton__item {
+  border-radius: var(--el-border-radius-small);
 }
 
 /* 空状态留白收敛 */

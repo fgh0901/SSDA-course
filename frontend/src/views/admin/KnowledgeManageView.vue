@@ -271,13 +271,12 @@ onMounted(async () => {
           @clear="onSearch"
         />
         <el-button
-          type="primary"
           @click="onSearch"
         >
           搜索
         </el-button>
         <el-button
-          type="success"
+          type="primary"
           @click="openCreate"
         >
           新增知识
@@ -288,6 +287,7 @@ onMounted(async () => {
     <el-table
       v-loading="loading"
       :data="list"
+      stripe
     >
       <el-table-column
         prop="id"
@@ -326,7 +326,10 @@ onMounted(async () => {
           >
             待核实
           </el-tag>
-          <span v-else>已核实</span>
+          <span
+            v-else
+            class="verified-ok"
+          >已核实</span>
         </template>
       </el-table-column>
       <el-table-column
@@ -405,6 +408,7 @@ onMounted(async () => {
       v-model:page-size="pageSize"
       :total="total"
       layout="total, prev, pager, next"
+      background
       class="pager"
       @current-change="fetchList"
     />
@@ -615,9 +619,9 @@ onMounted(async () => {
 .toolbar__keyword {
   width: 220px;
 }
-.pager {
-  margin-top: 16px;
-  justify-content: flex-end;
+.verified-ok {
+  font-size: 12px;
+  color: #909399;
 }
 .review-comment {
   margin-top: 12px;

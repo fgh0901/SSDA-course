@@ -91,6 +91,7 @@ onMounted(fetchList);
     <el-table
       v-loading="loading"
       :data="list"
+      stripe
     >
       <el-table-column
         prop="id"
@@ -172,6 +173,7 @@ onMounted(fetchList);
       v-model:current-page="page"
       :total="total"
       layout="total, prev, pager, next"
+      background
       class="pager"
       @current-change="fetchList"
     />

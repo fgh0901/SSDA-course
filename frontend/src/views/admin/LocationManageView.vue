@@ -133,13 +133,12 @@ onMounted(fetchList);
           @clear="onSearch"
         />
         <el-button
-          type="primary"
           @click="onSearch"
         >
           搜索
         </el-button>
         <el-button
-          type="success"
+          type="primary"
           @click="openCreate"
         >
           新增地点
@@ -150,11 +149,13 @@ onMounted(fetchList);
     <el-table
       v-loading="loading"
       :data="list"
+      stripe
     >
       <el-table-column
         prop="name"
         label="名称"
         min-width="150"
+        show-overflow-tooltip
       />
       <el-table-column
         prop="campus"
@@ -188,6 +189,7 @@ onMounted(fetchList);
       <el-table-column
         label="说明"
         min-width="180"
+        show-overflow-tooltip
       >
         <template #default="{ row }">
           {{ row.description || '—' }}
@@ -223,6 +225,7 @@ onMounted(fetchList);
       v-model:current-page="page"
       :total="total"
       layout="total, prev, pager, next"
+      background
       class="pager"
       @current-change="fetchList"
     />
@@ -245,6 +248,7 @@ onMounted(fetchList);
           <el-input
             v-model="form.name"
             maxlength="100"
+            placeholder="如:第一教学楼"
           />
         </el-form-item>
         <el-form-item
@@ -254,6 +258,7 @@ onMounted(fetchList);
           <el-input
             v-model="form.campus"
             maxlength="50"
+            placeholder="如:犀浦校区"
           />
         </el-form-item>
         <el-form-item
@@ -263,6 +268,7 @@ onMounted(fetchList);
           <el-input
             v-model="form.building"
             maxlength="100"
+            placeholder="如:综合楼"
           />
         </el-form-item>
         <el-form-item
@@ -272,6 +278,7 @@ onMounted(fetchList);
           <el-input
             v-model="form.floor"
             maxlength="20"
+            placeholder="如:1"
           />
         </el-form-item>
         <el-form-item
@@ -281,6 +288,7 @@ onMounted(fetchList);
           <el-input
             v-model="form.room"
             maxlength="50"
+            placeholder="如:X101"
           />
         </el-form-item>
         <el-form-item
@@ -290,8 +298,9 @@ onMounted(fetchList);
           <el-input
             v-model="form.description"
             type="textarea"
-            :rows="2"
+            :rows="3"
             maxlength="500"
+            placeholder="选填,如:位于一层大厅东侧,近东门"
           />
         </el-form-item>
       </el-form>

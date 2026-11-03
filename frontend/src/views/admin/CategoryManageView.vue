@@ -95,7 +95,7 @@ onMounted(fetchList);
         </p>
       </div>
       <el-button
-        type="success"
+        type="primary"
         data-testid="category-create"
         @click="openCreate"
       >
@@ -106,6 +106,7 @@ onMounted(fetchList);
     <el-table
       v-loading="loading"
       :data="list"
+      stripe
     >
       <el-table-column
         prop="id"
@@ -116,11 +117,13 @@ onMounted(fetchList);
         prop="name"
         label="名称"
         min-width="140"
+        show-overflow-tooltip
       />
       <el-table-column
         prop="description"
         label="描述"
         min-width="220"
+        show-overflow-tooltip
       >
         <template #default="{ row }">
           {{ row.description || '—' }}

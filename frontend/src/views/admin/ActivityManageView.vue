@@ -184,13 +184,12 @@ onMounted(async () => {
           @clear="onSearch"
         />
         <el-button
-          type="primary"
           @click="onSearch"
         >
           搜索
         </el-button>
         <el-button
-          type="success"
+          type="primary"
           @click="openCreate"
         >
           新增活动
@@ -201,11 +200,13 @@ onMounted(async () => {
     <el-table
       v-loading="loading"
       :data="list"
+      stripe
     >
       <el-table-column
         prop="title"
         label="标题"
         min-width="180"
+        show-overflow-tooltip
       />
       <el-table-column
         prop="startTime"
@@ -228,6 +229,7 @@ onMounted(async () => {
       <el-table-column
         label="报名方式"
         min-width="160"
+        show-overflow-tooltip
       >
         <template #default="{ row }">
           {{ row.signupMethod || '—' }}
@@ -263,6 +265,7 @@ onMounted(async () => {
       v-model:current-page="page"
       :total="total"
       layout="total, prev, pager, next"
+      background
       class="pager"
       @current-change="fetchList"
     />
@@ -270,7 +273,7 @@ onMounted(async () => {
     <el-dialog
       v-model="dialogVisible"
       :title="editingId === null ? '新增活动' : '编辑活动'"
-      width="620px"
+      width="640px"
     >
       <el-form
         ref="formRef"
@@ -341,6 +344,7 @@ onMounted(async () => {
           <el-input
             v-model="form.signupMethod"
             maxlength="200"
+            placeholder="如:扫码报名,详见活动通知"
           />
         </el-form-item>
         <el-form-item

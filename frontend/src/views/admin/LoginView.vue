@@ -116,12 +116,13 @@ async function onLogin(): Promise<void> {
   background: linear-gradient(160deg, #eaf2ff 0%, #f6f8fb 55%, #eefbff 100%);
 }
 .login__card {
-  width: 380px;
-  padding: 8px 4px;
+  width: 400px;
+  padding: 12px 8px;
+  transition: transform var(--ssda-transition), box-shadow var(--ssda-transition);
 }
 .login__title {
   text-align: center;
-  margin: 0 0 4px;
+  margin: 0 0 6px;
   font-size: 20px;
 }
 .login__subtitle {
@@ -129,11 +130,13 @@ async function onLogin(): Promise<void> {
   margin: 0 0 24px;
   font-size: 12px;
   color: #909399;
+  letter-spacing: 1px;
 }
 .login__error {
   margin-bottom: 16px;
 }
 .login__submit {
   width: 100%;
+  letter-spacing: 2px;
 }
 </style>

@@ -127,7 +127,6 @@ onMounted(fetchList);
         />
       </div>
       <el-button
-        type="primary"
         @click="onSearch"
       >
         查询
@@ -213,6 +212,7 @@ onMounted(fetchList);
       v-model:page-size="pageSize"
       :total="total"
       layout="total, prev, pager, next"
+      background
       class="pager"
       @current-change="fetchList"
     />
@@ -254,9 +254,11 @@ onMounted(fetchList);
   border-radius: 8px;
   margin-bottom: 8px;
   background: var(--ssda-bg-page);
+  border: 1px solid var(--ssda-border-color);
 }
 .msg--assistant {
   background: var(--el-color-primary-light-9);
+  border-color: var(--el-color-primary-light-8);
 }
 .msg__head {
   display: flex;
