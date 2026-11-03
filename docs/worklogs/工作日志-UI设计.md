@@ -106,9 +106,68 @@ Test Files  7 passed (7)
 - 小步提交(中文 Conventional Commits,只 add frontend/、docs/design/05 与本 worklog)。
 
 **交付节点**:
-- [ ] 节点 0:任务书 + 通读现状
-- [ ] 节点 1:全局令牌精修(index.css)
-- [ ] 节点 2:管理端 9 页精修
-- [ ] 节点 3:PageFooter + 学生端复查
-- [ ] 节点 4:规格文档追加第二轮精修记录
-- [ ] 节点 5:验证全绿 + 完成报告
+- [x] 节点 0:任务书 + 通读现状(管理端 9 页/学生端 11 页/8 组件/全局样式/测试锁定文案逐一复核)
+- [x] 节点 1:全局令牌精修(index.css)
+- [x] 节点 2:管理端 9 页精修
+- [x] 节点 3:PageFooter + 学生端复查
+- [x] 节点 4:规格文档追加第二轮精修记录(05-UI设计规格.md 第 8 节,版本 v1.1)
+- [x] 节点 5:验证全绿 + 完成报告
+
+## 完成报告(第二轮,2026-11-03)
+
+### 改动清单(文件级,共 25 个文件)
+
+**全局与布局**
+- `frontend/src/styles/index.css` — 新增 `--ssda-transition: 0.2s ease` 令牌;卡片过渡与 hover(上浮+二级阴影+边框浅蓝)收敛全局;按钮统一过渡 + 主按钮 hover 柔光/active 轻压;表格容器圆角裁切、斑马纹 `#fafbfd`;分页 hover 主色;dialog 标题加重 + 页脚上缘分隔线;form label 色;骨架屏圆角。
+- `frontend/src/components/layout/AdminLayout.vue` — 菜单 hover(light-9)/active(light-8)分层 + 过渡统一。
+- `frontend/src/components/PageFooter.vue` — 数据来源具名西南交通大学(采集底稿可溯),留白/行距微调。
+- `frontend/src/components/KnowledgeCard.vue` — 删除与全局重复的 transition/hover。
+
+**管理端 9 页**
+- `LocationManageView` — stripe + 分页 background;搜索降默认按钮、新增改 primary;名称/说明列 tooltip;表单补示例占位符、说明 3 行。
+- `KnowledgeManageView` — 同上按钮层级;"已核实"灰字弱化,与"待核实"橙标签形成层次;删除页内分页间距覆盖;stripe + background。
+- `CategoryManageView` — 新增改 primary;名称/描述列 tooltip;stripe。
+- `ServiceManageView` — 按钮层级;标题/部门/地点列 tooltip;弹窗 620→640;占位符;stripe + background。
+- `ActivityManageView` — 按钮层级;标题/报名方式列 tooltip;弹窗 620→640;报名方式占位符;stripe + background。
+- `CourseTeacherManageView` — 双 Tab 按钮层级;课程名/任课教师/任教课程列 tooltip;双表格 stripe + 双分页 background。
+- `ExpiredWorkbenchView` — stripe + background(P05 提示原文未动)。
+- `AiLogView` — 查询降默认按钮、导出保持主操作;background;消息块加边框(assistant 浅蓝同源)。
+- `LoginView` — 卡片 400px、副标题/登录按钮字距微调。
+
+**学生端 11 页 + NotFound**
+- `HomeView` — Hero 淡青径向光斑 + 留白 56/40;"最新知识"改 el-skeleton 骨架屏;分类卡 hover 收敛全局。
+- `KnowledgeListView` — 列表改 el-skeleton 骨架屏;分页 background。
+- `KnowledgeDetailView` — 长正文行高 1.9 + 字距 0.2px + 两端对齐 + 超长串换行。
+- `AiChatView` — 气泡行高 1.75;内容/来源芯片 overflow-wrap: anywhere;芯片 max-width。
+- `ServiceDetailView`、`ActivityDetailView` — descriptions 行高 1.8。
+- `LocationView`、`ServiceListView`、`ActivityListView`、`CourseTeacherView` — 表格 stripe + 分页 background。
+- `SearchResultView` — 删除与全局重复的 transition/hover。
+- `NotFoundView` — "您"→"你"。
+
+**设计决策**
+1. 管理端"搜索/查询"降为默认按钮、"新增"唯一 primary:页面单主按钮原则;学生端搜索仍 primary(其即主操作)。
+2. "新增 xx"success→primary:绿色语义归还状态标签,呼应"不引入第二种品牌色"。
+3. 骨架屏仅落首页最新知识 + 知识列表两处(首屏感知最强),`:loading` 复用既有 ref,零逻辑改动。
+4. 斑马纹行底色 #fafbfd 与表头 #f8fafc、hover #f5f8ff 三层浅色互不混淆。
+5. 测试锁定文案(ExpiredBanner 半角括号/空态句式/欢迎语/P03、P05 红线)全部保持原文。
+
+### 测试与构建结果原文
+
+```
+> eslint .(--fix 后无告警/错误)
+
+Test Files  9 passed (9)
+     Tests  54 passed (54)
+
+✓ built in 8.63s
+```
+(vite build 的 chunk >500 kB 提示为既有问题,源于 Element Plus 全量引入,本次未触碰构建配置。)
+
+命令:`export PATH="/c/Program Files/nodejs:$PATH"` 后依次 `npm run lint -- --fix` → `npm run lint` → `npm test` → `npm run build`,两批改动各验证一轮,均全绿。
+
+### 遗留建议(不阻塞验收)
+
+1. 主包 1.09 MB 仍未拆分(manualChunks / 按需引入,涉及构建配置,超出边界)。
+2. 管理端列表页可继续引入 el-skeleton(本轮按"必要处"克制,仅学生端两处);管理端首屏 v-loading 蒙层观感可接受。
+3. ExpiredBanner 日期外侧半角括号仍被测试锁定,维持原样。
+4. 后续新页面直接遵循规格 v1.1 第 8 节增量约定(按钮层级/弹窗宽度归档/tooltip 列)。
