@@ -26,7 +26,7 @@ describe('真实日历日期校验(F1,D-MED-2 后端侧)', () => {
   const knowledgeBase = {
     title: `${MARK}日期校验条目`,
     content: 'GUI 验收配套测试正文',
-    source: '测试来源(示例数据)'
+    source: '测试来源(自动化用例)'
   };
 
   it('D-MED-2 effectiveFrom=2026-13-99:新增知识被 400 拦截,提示不是真实存在的日期', async () => {

@@ -53,7 +53,7 @@ export async function insertKnowledge(row: {
       row.categoryId,
       row.title,
       row.content,
-      row.source ?? '测试来源(示例数据)',
+      row.source ?? '测试来源(自动化用例)',
       row.status ?? 'published',
       row.isVerified ?? 1,
       row.effectiveFrom,
