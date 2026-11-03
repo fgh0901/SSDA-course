@@ -14,7 +14,8 @@ const ORIGINAL = {
   DEEPSEEK_API_KEY: process.env.DEEPSEEK_API_KEY,
   DEEPSEEK_BASE_URL: process.env.DEEPSEEK_BASE_URL,
   DEEPSEEK_MODEL: process.env.DEEPSEEK_MODEL,
-  LLM_TIMEOUT_MS: process.env.LLM_TIMEOUT_MS
+  LLM_TIMEOUT_MS: process.env.LLM_TIMEOUT_MS,
+  KB_API_BASE_URL: process.env.KB_API_BASE_URL
 };
 
 function restoreOne(key: keyof typeof ORIGINAL): void {
@@ -26,6 +27,8 @@ function restoreOne(key: keyof typeof ORIGINAL): void {
 }
 
 // 强制覆盖(非 ?? 兜底):本文件语义即"Key 已配置";超时缩到 500ms 便于超时用例
+// 同步隔离外部知识库配置:KB 在线时会先于 LLM 发起 fetch,干扰本套件的请求断言
+delete process.env.KB_API_BASE_URL;
 process.env.DEEPSEEK_API_KEY = 'test-sk-deepseek-mock';
 process.env.DEEPSEEK_BASE_URL = 'http://127.0.0.1:59999';
 process.env.DEEPSEEK_MODEL = 'deepseek-chat';
@@ -36,4 +39,5 @@ export function restoreLlmEnv(): void {
   restoreOne('DEEPSEEK_BASE_URL');
   restoreOne('DEEPSEEK_MODEL');
   restoreOne('LLM_TIMEOUT_MS');
+  restoreOne('KB_API_BASE_URL');
 }
