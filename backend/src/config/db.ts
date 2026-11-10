@@ -18,6 +18,11 @@ export function getPool(): mysql.Pool {
       // 与契约 1.4 的时间格式一致,避免时区换算偏差
       dateStrings: true
     });
+    // 会话时区固定为东八区:过期/临期判定(CURDATE)、创建/更新时间戳
+    // 均按北京时间,不随部署服务器时区漂移(本地 +8 / CI UTC 容器 / 云服务器一致)
+    pool.on('connection', (conn) => {
+      conn.query("SET time_zone = '+08:00'");
+    });
   }
   return pool;
 }
