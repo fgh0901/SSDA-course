@@ -1,4 +1,3 @@
-import { env } from '../../config/env';
 import type { KnowledgeRetriever, RetrievedSource, RetrieverResult } from './types';
 
 interface KbItem {

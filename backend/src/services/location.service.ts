@@ -27,6 +27,11 @@ export async function listAdmin(q: { keyword?: string; campus?: string; building
   return { list: rows, total, page: q.page, pageSize: q.pageSize };
 }
 
+/** 管理端详情/编辑回显(契约 3.15 v1.1):返回与列表同字段,404 不存在 */
+export async function detailAdmin(id: number) {
+  return detail(id);
+}
+
 export async function create(input: LocationUpsert): Promise<{ id: number }> {
   const id = await locationDao.insertLocation({
     name: input.name,

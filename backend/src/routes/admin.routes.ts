@@ -69,6 +69,7 @@ guarded.delete('/activities/:id', validate(idParamSchema, 'params'), asyncHandle
 
 // 地点管理
 guarded.get('/locations', validate(locationQuerySchema, 'query'), asyncHandler(locationController.listAdmin));
+guarded.get('/locations/:id', validate(idParamSchema, 'params'), asyncHandler(locationController.detailAdmin));
 guarded.post('/locations', validate(locationUpsertSchema), asyncHandler(locationController.create));
 guarded.put('/locations/:id', validate(idParamSchema, 'params'), validate(locationUpsertSchema), asyncHandler(locationController.update));
 guarded.delete('/locations/:id', validate(idParamSchema, 'params'), asyncHandler(locationController.remove));

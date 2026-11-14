@@ -35,6 +35,16 @@ export async function listAdmin(_req: Request, res: Response, next: NextFunction
   }
 }
 
+/** GET /api/admin/locations/:id(契约 3.15 v1.1,编辑回显) */
+export async function detailAdmin(req: Request, res: Response, next: NextFunction) {
+  try {
+    const { id } = idParamSchema.parse(req.params);
+    ok(res, await locationService.detailAdmin(id));
+  } catch (err) {
+    next(err);
+  }
+}
+
 /** POST /api/admin/locations(契约 3.15) */
 export async function create(req: Request, res: Response, next: NextFunction) {
   try {

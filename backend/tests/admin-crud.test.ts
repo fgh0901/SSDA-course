@@ -215,6 +215,33 @@ describe('地点管理(契约 3.15)', () => {
     expect(res.status).toBe(400);
     expect(res.body.error.message).toContain('校区');
   });
+
+  it('管理端详情:200 回显列表同字段 / 404 不存在(契约 3.15 v1.1)', async () => {
+    const create = await request(app)
+      .post('/api/admin/locations')
+      .set('Authorization', `Bearer ${token}`)
+      .send({ name: `${MARK}详情回显地点`, campus: '主校区', building: '回显楼', floor: '3', room: '301' });
+    expect(create.status).toBe(200);
+    const id = create.body.data.id;
+
+    const detail = await request(app).get(`/api/admin/locations/${id}`).set('Authorization', `Bearer ${token}`);
+    expect(detail.status).toBe(200);
+    expect(detail.body.data).toMatchObject({
+      id,
+      name: `${MARK}详情回显地点`,
+      campus: '主校区',
+      building: '回显楼',
+      floor: '3',
+      room: '301'
+    });
+    expect(detail.body.data).toHaveProperty('updatedAt');
+
+    const notFound = await request(app).get('/api/admin/locations/999999').set('Authorization', `Bearer ${token}`);
+    expect(notFound.status).toBe(404);
+    expect(notFound.body.error.message).toBe('地点不存在');
+
+    await request(app).delete(`/api/admin/locations/${id}`).set('Authorization', `Bearer ${token}`);
+  });
 });
 
 describe('课程与教师管理(契约 3.16/3.17)', () => {
