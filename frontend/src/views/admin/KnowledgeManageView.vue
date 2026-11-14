@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { onMounted, reactive, ref } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
 import { ElMessage, ElMessageBox } from 'element-plus';
 import type { FormInstance } from 'element-plus';
 import {
@@ -30,6 +31,8 @@ import {
 
 // 知识管理(03-page-spec 4.2):全状态筛选列表 + 新增/编辑表单(TC-08 校验)+ 审核/上下架 + 变更日志抽屉
 const categoryStore = useCategoryStore();
+const route = useRoute();
+const router = useRouter();
 
 // ---- 列表 ----
 const STATUS_TABS: Array<{ label: string; value: string }> = [
@@ -88,9 +91,9 @@ function openCreate(): void {
   dialogVisible.value = true;
 }
 
-async function openEdit(row: KnowledgeItem): Promise<void> {
-  editingId.value = row.id;
-  const detail = await getAdminKnowledgeDetail(row.id); // 编辑回显(契约 3.3)
+async function openEditById(id: number): Promise<void> {
+  editingId.value = id;
+  const detail = await getAdminKnowledgeDetail(id); // 编辑回显(契约 3.3)
   Object.assign(form, {
     title: detail.title,
     categoryId: detail.categoryId,
@@ -101,6 +104,10 @@ async function openEdit(row: KnowledgeItem): Promise<void> {
     isVerified: detail.isVerified
   });
   dialogVisible.value = true;
+}
+
+async function openEdit(row: KnowledgeItem): Promise<void> {
+  await openEditById(row.id);
 }
 
 async function onSave(): Promise<void> {
@@ -237,6 +244,16 @@ const ACTION_LABEL: Record<string, string> = {
 onMounted(async () => {
   void categoryStore.fetchOnce();
   await fetchList();
+  // 过期工作台"核实更新"直达编辑(规格 4.3):读取 ?edit=<id> 自动打开编辑弹窗,随后清除 query 防刷新复触发
+  const editId = Number(route.query.edit);
+  if (Number.isInteger(editId) && editId > 0) {
+    router.replace({ query: { ...route.query, edit: undefined } });
+    try {
+      await openEditById(editId);
+    } catch {
+      // 详情不存在(如已被删除):错误提示由拦截器统一处理,保持列表态
+    }
+  }
 });
 </script>
 

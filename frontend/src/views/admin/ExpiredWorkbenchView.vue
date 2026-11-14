@@ -39,9 +39,9 @@ function onTabChange(): void {
 }
 
 function onEdit(row: ExpiredKnowledgeItem): void {
-  // 核实更新:跳知识管理编辑(编辑保存后 published 自动回退草稿重新审核,P04 红线)
-  router.push('/admin/knowledge');
-  ElMessage.info(`请在知识管理列表中编辑「${row.title}」并重新提交审核`);
+  // 核实更新:跳知识管理并带 edit 参数直达该条编辑弹窗(规格 4.3);编辑保存后 published 自动回退草稿重新审核(P04 红线)
+  router.push({ path: '/admin/knowledge', query: { edit: String(row.id) } });
+  ElMessage.info(`正在打开「${row.title}」编辑弹窗,保存后请重新提交审核`);
 }
 
 async function onTakedown(row: ExpiredKnowledgeItem): Promise<void> {

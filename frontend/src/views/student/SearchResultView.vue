@@ -6,9 +6,8 @@ import { searchAll } from '@/api/search';
 import type { SearchGroup, SearchResult } from '@/types/search';
 import type { SourceType } from '@/types/api';
 
-// 聚合搜索结果页(03-page-spec 3.8):类型 Tab 筛选 + 每组"共 N 条/查看更多" + 空结果提示(TC-01/02/03)
-const TYPE_OPTIONS: Array<{ value: SourceType | ''; label: string }> = [
-  { value: '', label: '全部' },
+// 聚合搜索结果页(03-page-spec 3.8):类型多选筛选(契约 2.14 type 逗号分隔)+ 每组"共 N 条/查看更多" + 空结果提示(TC-01/02/03)
+const TYPE_OPTIONS: Array<{ value: SourceType; label: string }> = [
   { value: 'knowledge', label: '知识' },
   { value: 'service', label: '办事指南' },
   { value: 'activity', label: '活动' },
@@ -20,7 +19,7 @@ const TYPE_OPTIONS: Array<{ value: SourceType | ''; label: string }> = [
 const route = useRoute();
 const router = useRouter();
 const keyword = ref('');
-const activeType = ref<SourceType | ''>('');
+const selectedTypes = ref<SourceType[]>([]);
 const result = ref<SearchResult | null>(null);
 const loading = ref(false);
 
@@ -52,7 +51,8 @@ async function fetchResult(): Promise<void> {
   try {
     result.value = await searchAll({
       keyword: keyword.value,
-      type: activeType.value || undefined,
+      // 契约 2.14:type 逗号分隔多值;空选=全部六类
+      type: selectedTypes.value.length ? selectedTypes.value.join(',') : undefined,
       page: 1,
       pageSize: 10
     });
@@ -64,6 +64,19 @@ async function fetchResult(): Promise<void> {
 function onTypeChange(): void {
   if (!keyword.value.trim()) return; // 无关键词不检索(引导输入)
   void fetchResult();
+}
+
+function onSelectAll(): void {
+  if (selectedTypes.value.length === 0) return;
+  selectedTypes.value = [];
+  onTypeChange();
+}
+
+function onToggleType(type: SourceType): void {
+  selectedTypes.value = selectedTypes.value.includes(type)
+    ? selectedTypes.value.filter((t) => t !== type)
+    : [...selectedTypes.value, type];
+  onTypeChange();
 }
 
 function onSearch(): void {
@@ -117,17 +130,22 @@ onMounted(() => {
     />
 
     <template v-else>
-      <el-tabs
-        v-model="activeType"
-        @tab-change="onTypeChange"
-      >
-        <el-tab-pane
+      <div class="type-filter">
+        <el-check-tag
+          :checked="selectedTypes.length === 0"
+          @change="onSelectAll"
+        >
+          全部
+        </el-check-tag>
+        <el-check-tag
           v-for="opt in TYPE_OPTIONS"
-          :key="opt.value || 'all'"
-          :label="opt.label"
-          :name="opt.value"
-        />
-      </el-tabs>
+          :key="opt.value"
+          :checked="selectedTypes.includes(opt.value)"
+          @change="() => onToggleType(opt.value)"
+        >
+          {{ opt.label }}
+        </el-check-tag>
+      </div>
 
       <div v-loading="loading">
         <el-empty
@@ -180,6 +198,13 @@ onMounted(() => {
 <style scoped>
 .filter-bar__keyword {
   width: 320px;
+}
+.type-filter {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 16px;
 }
 .group {
   margin-bottom: 24px;

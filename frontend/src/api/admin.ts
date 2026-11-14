@@ -1,6 +1,6 @@
 import http from './http';
 import type { Paged, KnowledgeStatus, PageQuery } from '@/types/api';
-import type { AdminCategory, Category } from '@/types/category';
+import type { AdminCategory } from '@/types/category';
 import type {
   ExpiredKnowledgeItem,
   KnowledgeChangeLog,
@@ -111,10 +111,6 @@ export function updateCategory(id: number, payload: CategoryPayload) {
 /** 仍有关联知识时 409,message 含条数(契约 3.12) */
 export function deleteCategory(id: number) {
   return http.delete<unknown, { id: number }>(`/admin/categories/${id}`);
-}
-
-export function toCategoryPayload(c: Category): CategoryPayload {
-  return { name: c.name, description: c.description, sortOrder: c.sortOrder, isEnabled: c.isEnabled };
 }
 
 // ---------- 办事指南管理(契约 3.13) ----------
